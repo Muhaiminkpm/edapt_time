@@ -15,46 +15,35 @@ class EmployeeDashboardView extends StatelessWidget {
     return Scaffold(
       backgroundColor: backgroundLight,
       body: SafeArea(
-        child: Stack(
+        child: Column(
           children: [
-            Column(
-              children: [
-                // Header
-                _buildHeader(),
-                // Scrollable Content
-                Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.only(bottom: 100),
-                    child: Column(
-                      children: [
-                        // Date & Status
-                        _buildDateStatus(),
-                        // Live Timer
-                        _buildLiveTimer(),
-                        // Punch In Button
-                        _buildPunchInButton(),
-                        // Location Info
-                        _buildLocationInfo(),
-                        const SizedBox(height: 24),
-                        // Quick Stats
-                        _buildQuickStats(),
-                        const SizedBox(height: 24),
-                        // Shift Card
-                        _buildShiftCard(),
-                        const SizedBox(height: 24),
-                      ],
-                    ),
-                  ),
+            // Header
+            _buildHeader(),
+            // Scrollable Content
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 24),
+                child: Column(
+                  children: [
+                    // Date & Status
+                    _buildDateStatus(),
+                    // Live Timer
+                    _buildLiveTimer(),
+                    // Punch In Button
+                    _buildPunchInButton(),
+                    // Location Info
+                    _buildLocationInfo(),
+                    const SizedBox(height: 24),
+                    // Quick Stats
+                    _buildQuickStats(),
+                    const SizedBox(height: 24),
+                    // Shift Card
+                    _buildShiftCard(),
+                    const SizedBox(height: 24),
+                  ],
                 ),
-              ],
-            ),
-            // Bottom Navigation
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: _buildBottomNavBar(),
+              ),
             ),
           ],
         ),

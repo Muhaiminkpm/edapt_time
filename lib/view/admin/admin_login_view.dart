@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'admin_shell_view.dart';
+import '../employee/employee_login_view.dart';
 
 class AdminLoginView extends StatelessWidget {
   const AdminLoginView({super.key});
@@ -371,7 +373,11 @@ class AdminLoginView extends StatelessWidget {
         ],
       ),
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const AdminShellView()),
+          );
+        },
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
           foregroundColor: Colors.white,
@@ -413,7 +419,11 @@ class AdminLoginView extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           TextButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const EmployeeLoginView()),
+              );
+            },
             style: TextButton.styleFrom(
               padding: EdgeInsets.zero,
               minimumSize: Size.zero,

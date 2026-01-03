@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'employee_shell_view.dart';
 
 class EmployeeLoginView extends StatelessWidget {
   const EmployeeLoginView({super.key});
@@ -263,7 +264,11 @@ class EmployeeLoginView extends StatelessWidget {
               ],
             ),
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (_) => const EmployeeShellView()),
+                );
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
                 foregroundColor: Colors.white,

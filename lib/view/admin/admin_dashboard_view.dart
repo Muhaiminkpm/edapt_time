@@ -14,41 +14,30 @@ class AdminDashboardView extends StatelessWidget {
     return Scaffold(
       backgroundColor: backgroundLight,
       body: SafeArea(
-        child: Stack(
+        child: Column(
           children: [
-            Column(
-              children: [
-                // Top App Bar
-                _buildAppBar(),
-                // Scrollable Content
-                Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Welcome Section
-                        _buildWelcomeSection(),
-                        // Stats Grid
-                        _buildStatsGrid(),
-                        // Quick Actions
-                        _buildQuickActions(),
-                        // Recent Activity
-                        _buildRecentActivity(),
-                        // Bottom spacing for nav bar
-                        const SizedBox(height: 100),
-                      ],
-                    ),
-                  ),
+            // Top App Bar
+            _buildAppBar(),
+            // Scrollable Content
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Welcome Section
+                    _buildWelcomeSection(),
+                    // Stats Grid
+                    _buildStatsGrid(),
+                    // Quick Actions
+                    _buildQuickActions(),
+                    // Recent Activity
+                    _buildRecentActivity(),
+                    // Bottom spacing
+                    const SizedBox(height: 24),
+                  ],
                 ),
-              ],
-            ),
-            // Bottom Navigation Bar
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: _buildBottomNavBar(),
+              ),
             ),
           ],
         ),
