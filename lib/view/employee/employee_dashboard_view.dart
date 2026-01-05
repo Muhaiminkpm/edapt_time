@@ -3,12 +3,17 @@ import 'package:flutter/material.dart';
 class EmployeeDashboardView extends StatelessWidget {
   const EmployeeDashboardView({super.key});
 
-  static const Color primaryColor = Color(0xFF135BEC);
-  static const Color backgroundLight = Color(0xFFF6F6F8);
+  // Enterprise-grade color palette - calm and professional
+  static const Color primaryColor = Color(0xFF1A56DB); // Deeper corporate blue
+  static const Color primaryLight = Color(0xFF3B82F6);
+  static const Color backgroundLight = Color(0xFFF8FAFC); // Softer off-white
   static const Color surfaceLight = Color(0xFFFFFFFF);
-  static const Color borderLight = Color(0xFFF1F5F9);
-  static const Color textMain = Color(0xFF0F172A);
-  static const Color textSub = Color(0xFF64748B);
+  static const Color borderLight = Color(0xFFE2E8F0); // Slate-200
+  static const Color textMain = Color(0xFF1E293B); // Slate-800
+  static const Color textSecondary = Color(0xFF64748B); // Slate-500
+  static const Color textMuted = Color(0xFF94A3B8); // Slate-400
+  static const Color successColor = Color(0xFF16A34A); // Professional green
+  static const Color warningColor = Color(0xFFEA580C); // Professional orange
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +42,7 @@ class EmployeeDashboardView extends StatelessWidget {
                     const SizedBox(height: 24),
                     // Quick Stats
                     _buildQuickStats(),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     // Shift Card
                     _buildShiftCard(),
                     const SizedBox(height: 24),
@@ -53,23 +58,23 @@ class EmployeeDashboardView extends StatelessWidget {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
       child: Row(
         children: [
-          // Avatar with online indicator
+          // Avatar with online indicator - balanced size
           Stack(
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: const Color(0xFFE8C9A0),
                   border: Border.all(color: Colors.white, width: 2),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 8,
+                      color: Colors.black.withOpacity(0.05), // Reduced shadow
+                      blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
                   ],
@@ -79,11 +84,11 @@ class EmployeeDashboardView extends StatelessWidget {
                 bottom: 0,
                 right: 0,
                 child: Container(
-                  width: 12,
-                  height: 12,
+                  width: 11,
+                  height: 11,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFF22C55E),
+                    color: successColor,
                     border: Border.all(color: Colors.white, width: 2),
                   ),
                 ),
@@ -91,7 +96,7 @@ class EmployeeDashboardView extends StatelessWidget {
             ],
           ),
           const SizedBox(width: 12),
-          // Welcome Text
+          // Welcome Text - secondary feel
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,54 +104,58 @@ class EmployeeDashboardView extends StatelessWidget {
                 Text(
                   'Welcome back,',
                   style: TextStyle(
-                    color: textSub,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                    color: textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    height: 1.3,
                   ),
                 ),
+                SizedBox(height: 1),
                 Text(
                   'Alex Morgan',
                   style: TextStyle(
                     color: textMain,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600, // Semibold, not overly bold
+                    letterSpacing: -0.2,
                   ),
                 ),
               ],
             ),
           ),
-          // Notification Button
+          // Notification Button - subtle
           Stack(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: surfaceLight,
+                  border: Border.all(color: borderLight, width: 1),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      color: Colors.black.withOpacity(0.03), // Very subtle
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
                     ),
                   ],
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.notifications_outlined,
-                  color: textSub,
-                  size: 24,
+                  color: textSecondary,
+                  size: 20, // Reduced size
                 ),
               ),
               Positioned(
                 top: 8,
-                right: 10,
+                right: 9,
                 child: Container(
-                  width: 8,
-                  height: 8,
+                  width: 7,
+                  height: 7,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFFEF4444),
+                    color: const Color(0xFFDC2626),
                     border: Border.all(color: Colors.white, width: 1),
                   ),
                 ),
@@ -167,17 +176,19 @@ class EmployeeDashboardView extends StatelessWidget {
             'Mon, 12 Oct 2023',
             style: TextStyle(
               color: textMain,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              letterSpacing: -0.3,
+              fontSize: 18, // Slightly reduced
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.2,
             ),
           ),
           SizedBox(height: 4),
           Text(
-            "You're on time today!",
+            "You're on time today",
             style: TextStyle(
-              color: textSub,
-              fontSize: 14,
+              color: textSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+              height: 1.4,
             ),
           ),
         ],
@@ -187,7 +198,7 @@ class EmployeeDashboardView extends StatelessWidget {
 
   Widget _buildLiveTimer() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -206,17 +217,17 @@ class EmployeeDashboardView extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            height: 80,
-            margin: const EdgeInsets.symmetric(horizontal: 4),
+            height: 72, // Slightly reduced
+            margin: const EdgeInsets.symmetric(horizontal: 5),
             decoration: BoxDecoration(
               color: surfaceLight,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: borderLight),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: borderLight, width: 1),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  color: Colors.black.withOpacity(0.02), // Very subtle
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
                 ),
               ],
             ),
@@ -225,19 +236,21 @@ class EmployeeDashboardView extends StatelessWidget {
                 value,
                 style: const TextStyle(
                   color: primaryColor,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 28, // Reduced dominance
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.5,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             label,
-            style: const TextStyle(
-              color: textSub,
-              fontSize: 12,
+            style: TextStyle(
+              color: textMuted, // More secondary
+              fontSize: 11,
               fontWeight: FontWeight.w500,
+              letterSpacing: 0.2,
             ),
           ),
         ],
@@ -247,13 +260,13 @@ class EmployeeDashboardView extends StatelessWidget {
 
   Widget _buildTimerSeparator() {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: 20),
       child: Text(
         ':',
         style: TextStyle(
-          color: Colors.grey.shade300,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
+          color: borderLight,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
@@ -261,60 +274,60 @@ class EmployeeDashboardView extends StatelessWidget {
 
   Widget _buildPunchInButton() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 32),
+      padding: const EdgeInsets.symmetric(vertical: 28),
       child: Column(
         children: [
-          // Glow Effect Container
+          // Glow Effect Container - reduced aggression
           Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: primaryColor.withOpacity(0.3),
-                  blurRadius: 40,
-                  spreadRadius: 8,
+                  color: primaryColor.withOpacity(0.18), // Reduced glow
+                  blurRadius: 32,
+                  spreadRadius: 4,
                 ),
               ],
             ),
             child: Container(
-              width: 192,
-              height: 192,
+              width: 176, // Slightly smaller
+              height: 176,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
                     primaryColor,
-                    Color(0xFF1D4ED8),
+                    const Color(0xFF1E40AF), // Deeper blue
                   ],
                 ),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.1),
-                  width: 4,
+                  color: Colors.white.withOpacity(0.08),
+                  width: 3,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: primaryColor.withOpacity(0.4),
-                    blurRadius: 24,
-                    offset: const Offset(0, 8),
+                    color: primaryColor.withOpacity(0.25), // Reduced
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
                   ),
                 ],
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Fingerprint Icon Container
+                  // Fingerprint Icon Container - professional
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withOpacity(0.15),
                     ),
                     child: const Icon(
-                      Icons.fingerprint,
+                      Icons.fingerprint_rounded,
                       color: Colors.white,
-                      size: 40,
+                      size: 36,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -322,18 +335,18 @@ class EmployeeDashboardView extends StatelessWidget {
                     'Punch In',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
-                    'Slide to confirm',
+                    'Tap to confirm',
                     style: TextStyle(
-                      color: Colors.blue.shade100,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withOpacity(0.6), // More subtle
+                      fontSize: 11,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ],
@@ -348,19 +361,19 @@ class EmployeeDashboardView extends StatelessWidget {
   Widget _buildLocationInfo() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: const [
+      children: [
         Icon(
           Icons.location_on_outlined,
-          color: textSub,
-          size: 16,
+          color: textMuted, // More secondary
+          size: 14,
         ),
-        SizedBox(width: 6),
+        const SizedBox(width: 5),
         Text(
           'Office Location: New York, NY',
           style: TextStyle(
-            color: textSub,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
+            color: textMuted,
+            fontSize: 13,
+            fontWeight: FontWeight.w400,
           ),
         ),
       ],
@@ -369,28 +382,28 @@ class EmployeeDashboardView extends StatelessWidget {
 
   Widget _buildQuickStats() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
           // Check In Card
           Expanded(
             child: _buildStatCard(
-              icon: Icons.login,
-              iconColor: const Color(0xFF22C55E),
-              bgColor: const Color(0xFFDCFCE7),
+              icon: Icons.login_rounded,
+              iconColor: const Color(0xFF16A34A), // Slightly desaturated
+              bgColor: const Color(0xFFDCFCE7).withOpacity(0.7),
               label: 'Check In',
-              labelColor: const Color(0xFF15803D),
+              labelColor: const Color(0xFF166534),
               time: '09:00 AM',
               status: 'On Time',
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           // Check Out Card
           Expanded(
             child: _buildStatCard(
-              icon: Icons.logout,
-              iconColor: const Color(0xFFF97316),
-              bgColor: const Color(0xFFFFEDD5),
+              icon: Icons.logout_rounded,
+              iconColor: const Color(0xFFEA580C), // Slightly desaturated
+              bgColor: const Color(0xFFFFEDD5).withOpacity(0.7),
               label: 'Check Out',
               labelColor: const Color(0xFFC2410C),
               time: '--:--',
@@ -412,16 +425,16 @@ class EmployeeDashboardView extends StatelessWidget {
     required String status,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: surfaceLight,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderLight),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: borderLight, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -429,42 +442,44 @@ class EmployeeDashboardView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
             decoration: BoxDecoration(
               color: bgColor,
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(5),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, color: iconColor, size: 14),
-                const SizedBox(width: 6),
+                Icon(icon, color: iconColor, size: 13),
+                const SizedBox(width: 5),
                 Text(
                   label,
                   style: TextStyle(
                     color: labelColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Text(
             time,
             style: const TextStyle(
               color: textMain,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.3,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Text(
             status,
-            style: const TextStyle(
-              color: textSub,
-              fontSize: 12,
+            style: TextStyle(
+              color: textMuted,
+              fontSize: 11,
+              fontWeight: FontWeight.w400,
             ),
           ),
         ],
@@ -474,49 +489,49 @@ class EmployeeDashboardView extends StatelessWidget {
 
   Widget _buildShiftCard() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF0F172A),
-          borderRadius: BorderRadius.circular(16),
+          color: const Color(0xFF1E293B), // Slightly lighter for comfort
+          borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
+              color: Colors.black.withOpacity(0.08), // Reduced shadow
+              blurRadius: 12,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
         child: Stack(
           children: [
-            // Decorative Circles
+            // Decorative Circles - subtle
             Positioned(
-              top: -16,
-              right: -16,
+              top: -12,
+              right: -12,
               child: Container(
-                width: 128,
-                height: 128,
+                width: 100,
+                height: 100,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.05),
+                  color: Colors.white.withOpacity(0.03),
                 ),
               ),
             ),
             Positioned(
-              bottom: -16,
-              left: -16,
+              bottom: -12,
+              left: -12,
               child: Container(
-                width: 128,
-                height: 128,
+                width: 100,
+                height: 100,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: primaryColor.withOpacity(0.2),
+                  color: primaryColor.withOpacity(0.12),
                 ),
               ),
             ),
             // Content
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
                   Expanded(
@@ -524,24 +539,25 @@ class EmployeeDashboardView extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          children: const [
+                          children: [
                             Icon(
                               Icons.calendar_month_outlined,
-                              color: primaryColor,
-                              size: 20,
+                              color: primaryLight,
+                              size: 18,
                             ),
-                            SizedBox(width: 8),
-                            Text(
+                            const SizedBox(width: 7),
+                            const Text(
                               "Today's Shift",
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: -0.2,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 7),
                         const Text(
                           '09:00 AM - 06:00 PM',
                           style: TextStyle(
@@ -550,28 +566,29 @@ class EmployeeDashboardView extends StatelessWidget {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
                         Text(
                           'General Shift • 8h 00m',
                           style: TextStyle(
-                            color: Colors.grey.shade500,
+                            color: const Color(0xFF64748B),
                             fontSize: 12,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ],
                     ),
                   ),
                   Container(
-                    width: 40,
-                    height: 40,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withOpacity(0.08),
                     ),
-                    child: const Icon(
-                      Icons.chevron_right,
-                      color: Colors.white,
-                      size: 24,
+                    child: Icon(
+                      Icons.chevron_right_rounded,
+                      color: Colors.white.withOpacity(0.6),
+                      size: 22,
                     ),
                   ),
                 ],
@@ -587,18 +604,18 @@ class EmployeeDashboardView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: surfaceLight,
         border: Border(
-          top: BorderSide(color: Colors.grey.shade200),
+          top: BorderSide(color: borderLight, width: 1),
         ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavItem(Icons.dashboard, 'Home', isActive: true),
+          _buildNavItem(Icons.dashboard_rounded, 'Home', isActive: true),
           _buildNavItem(Icons.calendar_today_outlined, 'History'),
           _buildNavItem(Icons.groups_outlined, 'Team'),
-          _buildNavItem(Icons.person_outline, 'Profile'),
+          _buildNavItem(Icons.person_outline_rounded, 'Profile'),
         ],
       ),
     );
@@ -610,16 +627,16 @@ class EmployeeDashboardView extends StatelessWidget {
       children: [
         Icon(
           icon,
-          color: isActive ? primaryColor : textSub,
-          size: 24,
+          color: isActive ? primaryColor : textMuted,
+          size: 22,
         ),
         const SizedBox(height: 4),
         Text(
           label,
           style: TextStyle(
-            color: isActive ? primaryColor : textSub,
-            fontSize: 10,
-            fontWeight: FontWeight.w500,
+            color: isActive ? primaryColor : textMuted,
+            fontSize: 11,
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
           ),
         ),
       ],

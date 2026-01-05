@@ -3,15 +3,18 @@ import 'package:flutter/material.dart';
 class EmployeeAttendanceView extends StatelessWidget {
   const EmployeeAttendanceView({super.key});
 
-  static const Color primaryColor = Color(0xFF135BEC);
-  static const Color backgroundLight = Color(0xFFF6F6F8);
+  static const Color primaryColor = Color(0xFF1A56DB);
+  static const Color primaryLight = Color(0xFF3B82F6);
+  static const Color backgroundLight = Color(0xFFF8FAFC);
   static const Color surfaceLight = Color(0xFFFFFFFF);
-  static const Color borderLight = Color(0xFFF1F5F9);
-  static const Color textMain = Color(0xFF0F172A);
-  static const Color textSub = Color(0xFF64748B);
-  static const Color statusAbsent = Color(0xFFEF4444);
-  static const Color statusLeave = Color(0xFFF59E0B);
-  static const Color statusHalf = Color(0xFF8B5CF6);
+  static const Color borderLight = Color(0xFFE2E8F0);
+  static const Color textMain = Color(0xFF1E293B);
+  static const Color textSecondary = Color(0xFF64748B);
+  static const Color textMuted = Color(0xFF94A3B8);
+  static const Color statusPresent = Color(0xFF2563EB);
+  static const Color statusAbsent = Color(0xFFDC2626);
+  static const Color statusLeave = Color(0xFFD97706);
+  static const Color statusHalf = Color(0xFF7C3AED);
 
   @override
   Widget build(BuildContext context) {
@@ -22,11 +25,8 @@ class EmployeeAttendanceView extends StatelessWidget {
           children: [
             Column(
               children: [
-                // Top App Bar
                 _buildAppBar(),
-                // Stats Row
                 _buildStatsRow(),
-                // Scrollable Content
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
@@ -34,11 +34,8 @@ class EmployeeAttendanceView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Calendar
                         _buildCalendar(),
-                        // Legend Chips
                         _buildLegendChips(),
-                        // Date Details
                         _buildDateDetails(),
                       ],
                     ),
@@ -46,10 +43,9 @@ class EmployeeAttendanceView extends StatelessWidget {
                 ),
               ],
             ),
-            // Floating Action Button
             Positioned(
-              bottom: 24,
-              right: 24,
+              bottom: 20,
+              right: 20,
               child: _buildFAB(),
             ),
           ],
@@ -60,22 +56,27 @@ class EmployeeAttendanceView extends StatelessWidget {
 
   Widget _buildAppBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      color: backgroundLight.withOpacity(0.95),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      color: backgroundLight,
       child: Row(
         children: [
-          // Avatar
           Container(
-            width: 40,
-            height: 40,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: const Color(0xFFE8C9A0),
-              border: Border.all(color: borderLight),
+              border: Border.all(color: Colors.white, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 12),
-          // Title
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,39 +86,41 @@ class EmployeeAttendanceView extends StatelessWidget {
                   style: TextStyle(
                     color: textMain,
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.2,
                   ),
                 ),
+                SizedBox(height: 1),
                 Text(
                   'Employee View',
                   style: TextStyle(
-                    color: textSub,
+                    color: textSecondary,
                     fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ],
             ),
           ),
-          // Notification Button
           Container(
-            width: 40,
-            height: 40,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: surfaceLight,
+              border: Border.all(color: borderLight, width: 1),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
                 ),
               ],
             ),
-            child: const Icon(
+            child: Icon(
               Icons.notifications_outlined,
-              color: textMain,
-              size: 24,
+              color: textSecondary,
+              size: 20,
             ),
           ),
         ],
@@ -127,13 +130,13 @@ class EmployeeAttendanceView extends StatelessWidget {
 
   Widget _buildStatsRow() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
       child: Row(
         children: [
-          Expanded(child: _buildStatCard('Present', '18', primaryColor)),
-          const SizedBox(width: 12),
+          Expanded(child: _buildStatCard('Present', '18', statusPresent)),
+          const SizedBox(width: 10),
           Expanded(child: _buildStatCard('Leaves', '1', statusLeave)),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(child: _buildStatCard('Absent', '0', statusAbsent)),
         ],
       ),
@@ -142,16 +145,16 @@ class EmployeeAttendanceView extends StatelessWidget {
 
   Widget _buildStatCard(String label, String count, Color dotColor) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: surfaceLight,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderLight),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: borderLight, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -161,31 +164,32 @@ class EmployeeAttendanceView extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 8,
-                height: 8,
+                width: 7,
+                height: 7,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: dotColor,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Text(
                 label,
-                style: const TextStyle(
-                  color: textSub,
-                  fontSize: 12,
+                style: TextStyle(
+                  color: textSecondary,
+                  fontSize: 11,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             count,
             style: const TextStyle(
               color: textMain,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.5,
             ),
           ),
         ],
@@ -195,25 +199,24 @@ class EmployeeAttendanceView extends StatelessWidget {
 
   Widget _buildCalendar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         decoration: BoxDecoration(
           color: surfaceLight,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: borderLight),
+          border: Border.all(color: borderLight, width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
         child: Column(
           children: [
-            // Calendar Header
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -222,11 +225,11 @@ class EmployeeAttendanceView extends StatelessWidget {
                     height: 32,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.transparent,
+                      color: backgroundLight,
                     ),
-                    child: const Icon(
-                      Icons.chevron_left,
-                      color: textSub,
+                    child: Icon(
+                      Icons.chevron_left_rounded,
+                      color: textSecondary,
                       size: 20,
                     ),
                   ),
@@ -234,8 +237,9 @@ class EmployeeAttendanceView extends StatelessWidget {
                     'September 2023',
                     style: TextStyle(
                       color: textMain,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.2,
                     ),
                   ),
                   Container(
@@ -243,20 +247,19 @@ class EmployeeAttendanceView extends StatelessWidget {
                     height: 32,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.transparent,
+                      color: backgroundLight,
                     ),
-                    child: const Icon(
-                      Icons.chevron_right,
-                      color: textSub,
+                    child: Icon(
+                      Icons.chevron_right_rounded,
+                      color: textSecondary,
                       size: 20,
                     ),
                   ),
                 ],
               ),
             ),
-            // Weekday Headers
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 14),
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(color: borderLight),
@@ -266,14 +269,15 @@ class EmployeeAttendanceView extends StatelessWidget {
                 children: ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) {
                   return Expanded(
                     child: Container(
-                      height: 32,
+                      height: 28,
                       alignment: Alignment.center,
                       child: Text(
                         day,
-                        style: const TextStyle(
-                          color: textSub,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                        style: TextStyle(
+                          color: textMuted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.3,
                         ),
                       ),
                     ),
@@ -281,9 +285,8 @@ class EmployeeAttendanceView extends StatelessWidget {
                 }).toList(),
               ),
             ),
-            // Calendar Grid
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(14),
               child: _buildCalendarGrid(),
             ),
           ],
@@ -293,34 +296,28 @@ class EmployeeAttendanceView extends StatelessWidget {
   }
 
   Widget _buildCalendarGrid() {
-    // Calendar data: day number, status color (null = no dot, gray = off)
     final List<Map<String, dynamic>> calendarData = [
-      // Empty slots
       {'day': '', 'status': null},
       {'day': '', 'status': null},
       {'day': '', 'status': null},
-      // Week 1
-      {'day': '1', 'status': primaryColor},
-      {'day': '2', 'status': Colors.grey.shade300},
-      {'day': '3', 'status': Colors.grey.shade300},
-      {'day': '4', 'status': primaryColor},
-      // Week 2
-      {'day': '5', 'status': primaryColor},
+      {'day': '1', 'status': statusPresent},
+      {'day': '2', 'status': const Color(0xFFCBD5E1)},
+      {'day': '3', 'status': const Color(0xFFCBD5E1)},
+      {'day': '4', 'status': statusPresent},
+      {'day': '5', 'status': statusPresent},
       {'day': '6', 'status': statusHalf},
-      {'day': '7', 'status': primaryColor},
-      {'day': '8', 'status': primaryColor},
-      {'day': '9', 'status': Colors.grey.shade300},
-      {'day': '10', 'status': Colors.grey.shade300},
+      {'day': '7', 'status': statusPresent},
+      {'day': '8', 'status': statusPresent},
+      {'day': '9', 'status': const Color(0xFFCBD5E1)},
+      {'day': '10', 'status': const Color(0xFFCBD5E1)},
       {'day': '11', 'status': statusAbsent},
-      // Week 3
-      {'day': '12', 'status': primaryColor},
-      {'day': '13', 'status': primaryColor},
+      {'day': '12', 'status': statusPresent},
+      {'day': '13', 'status': statusPresent},
       {'day': '14', 'status': 'selected'},
       {'day': '15', 'status': statusLeave},
-      {'day': '16', 'status': Colors.grey.shade300},
-      {'day': '17', 'status': Colors.grey.shade300},
-      {'day': '18', 'status': primaryColor},
-      // Week 4-5 (future dates)
+      {'day': '16', 'status': const Color(0xFFCBD5E1)},
+      {'day': '17', 'status': const Color(0xFFCBD5E1)},
+      {'day': '18', 'status': statusPresent},
       {'day': '19', 'status': 'future'},
       {'day': '20', 'status': 'future'},
       {'day': '21', 'status': 'future'},
@@ -340,7 +337,7 @@ class EmployeeAttendanceView extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
-        mainAxisSpacing: 8,
+        mainAxisSpacing: 6,
         crossAxisSpacing: 0,
         childAspectRatio: 1,
       ),
@@ -375,15 +372,15 @@ class EmployeeAttendanceView extends StatelessWidget {
           day,
           style: const TextStyle(
             color: textMain,
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 3),
         if (dotColor != null)
           Container(
-            width: 6,
-            height: 6,
+            width: 5,
+            height: 5,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: dotColor,
@@ -398,15 +395,15 @@ class EmployeeAttendanceView extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Container(
-          width: 32,
-          height: 32,
+          width: 30,
+          height: 30,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: primaryColor,
             boxShadow: [
               BoxShadow(
-                color: primaryColor.withOpacity(0.3),
-                blurRadius: 8,
+                color: primaryColor.withOpacity(0.2),
+                blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
             ],
@@ -416,8 +413,8 @@ class EmployeeAttendanceView extends StatelessWidget {
               day,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -433,8 +430,9 @@ class EmployeeAttendanceView extends StatelessWidget {
         Text(
           day,
           style: TextStyle(
-            color: Colors.grey.shade400,
-            fontSize: 14,
+            color: textMuted,
+            fontSize: 13,
+            fontWeight: FontWeight.w400,
           ),
         ),
       ],
@@ -443,12 +441,12 @@ class EmployeeAttendanceView extends StatelessWidget {
 
   Widget _buildLegendChips() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
       child: Wrap(
         spacing: 8,
         runSpacing: 8,
         children: [
-          _buildLegendChip('Present', primaryColor),
+          _buildLegendChip('Present', statusPresent),
           _buildLegendChip('Absent', statusAbsent),
           _buildLegendChip('Leave', statusLeave),
           _buildLegendChip('Half-day', statusHalf),
@@ -459,36 +457,29 @@ class EmployeeAttendanceView extends StatelessWidget {
 
   Widget _buildLegendChip(String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: surfaceLight,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: borderLight),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 8,
-            height: 8,
+            width: 6,
+            height: 6,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: color,
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 5),
           Text(
             label,
-            style: const TextStyle(
-              color: textSub,
-              fontSize: 12,
+            style: TextStyle(
+              color: textSecondary,
+              fontSize: 11,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -499,18 +490,19 @@ class EmployeeAttendanceView extends StatelessWidget {
 
   Widget _buildDateDetails() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.only(left: 4, bottom: 12),
+          Padding(
+            padding: const EdgeInsets.only(left: 2, bottom: 10),
             child: Text(
               'September 14 Details',
               style: TextStyle(
                 color: textMain,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.2,
               ),
             ),
           ),
@@ -518,20 +510,19 @@ class EmployeeAttendanceView extends StatelessWidget {
             decoration: BoxDecoration(
               color: surfaceLight,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: borderLight),
+              border: Border.all(color: borderLight, width: 1),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
                 ),
               ],
             ),
             child: Column(
               children: [
-                // Status Row
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(color: borderLight),
@@ -540,23 +531,23 @@ class EmployeeAttendanceView extends StatelessWidget {
                   child: Row(
                     children: [
                       Container(
-                        width: 40,
-                        height: 40,
+                        width: 36,
+                        height: 36,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: primaryColor.withOpacity(0.1),
+                          color: primaryColor.withOpacity(0.08),
                         ),
                         child: Icon(
-                          Icons.check_circle_outline,
+                          Icons.check_circle_outline_rounded,
                           color: primaryColor,
-                          size: 20,
+                          size: 18,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
+                          children: [
                             Text(
                               'Present',
                               style: TextStyle(
@@ -565,11 +556,13 @@ class EmployeeAttendanceView extends StatelessWidget {
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
+                            const SizedBox(height: 1),
                             Text(
                               'Regular Shift',
                               style: TextStyle(
-                                color: textSub,
+                                color: textSecondary,
                                 fontSize: 12,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                           ],
@@ -581,14 +574,14 @@ class EmployeeAttendanceView extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFDCFCE7),
-                          borderRadius: BorderRadius.circular(12),
+                          color: const Color(0xFFDCFCE7).withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Text(
+                        child: Text(
                           'On Time',
                           style: TextStyle(
-                            color: Color(0xFF15803D),
-                            fontSize: 12,
+                            color: const Color(0xFF166534),
+                            fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -596,12 +589,11 @@ class EmployeeAttendanceView extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Time Row
                 Row(
                   children: [
                     Expanded(
                       child: Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           border: Border(
                             right: BorderSide(color: borderLight),
@@ -609,23 +601,23 @@ class EmployeeAttendanceView extends StatelessWidget {
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
+                          children: [
                             Text(
                               'Check In',
                               style: TextStyle(
-                                color: textSub,
-                                fontSize: 12,
+                                color: textSecondary,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            SizedBox(height: 4),
+                            const SizedBox(height: 4),
                             Text(
                               '09:02 AM',
                               style: TextStyle(
                                 color: textMain,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'monospace',
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: -0.3,
                               ),
                             ),
                           ],
@@ -634,26 +626,26 @@ class EmployeeAttendanceView extends StatelessWidget {
                     ),
                     Expanded(
                       child: Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(14),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
+                          children: [
                             Text(
                               'Check Out',
                               style: TextStyle(
-                                color: textSub,
-                                fontSize: 12,
+                                color: textSecondary,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            SizedBox(height: 4),
+                            const SizedBox(height: 4),
                             Text(
                               '06:05 PM',
                               style: TextStyle(
                                 color: textMain,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'monospace',
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: -0.3,
                               ),
                             ),
                           ],
@@ -662,44 +654,43 @@ class EmployeeAttendanceView extends StatelessWidget {
                     ),
                   ],
                 ),
-                // Total Hours Footer
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
+                    color: backgroundLight,
                     borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12),
+                      bottomLeft: Radius.circular(11),
+                      bottomRight: Radius.circular(11),
                     ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
-                        children: const [
+                        children: [
                           Icon(
-                            Icons.schedule,
-                            color: textSub,
-                            size: 18,
+                            Icons.schedule_rounded,
+                            color: textMuted,
+                            size: 16,
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 6),
                           Text(
                             'Total Hours',
                             style: TextStyle(
-                              color: textSub,
+                              color: textSecondary,
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                       ),
-                      const Text(
+                      Text(
                         '9h 03m',
                         style: TextStyle(
                           color: textMain,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'monospace',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.2,
                         ),
                       ),
                     ],
@@ -716,36 +707,37 @@ class EmployeeAttendanceView extends StatelessWidget {
   Widget _buildFAB() {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: primaryColor.withOpacity(0.35),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+            color: primaryColor.withOpacity(0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         decoration: BoxDecoration(
           color: primaryColor,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(22),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             Icon(
-              Icons.add,
+              Icons.add_rounded,
               color: Colors.white,
-              size: 20,
+              size: 18,
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 6),
             Text(
               'Request Leave',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 15,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
+                letterSpacing: 0.1,
               ),
             ),
           ],

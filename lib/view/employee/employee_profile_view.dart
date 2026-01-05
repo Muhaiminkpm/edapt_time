@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
+import '../../core/storage/auth_service.dart';
 
 class EmployeeProfileView extends StatelessWidget {
   const EmployeeProfileView({super.key});
 
-  static const Color primaryColor = Color(0xFF135BEC);
-  static const Color backgroundLight = Color(0xFFF6F6F8);
-  static const Color textMain = Color(0xFF0F172A);
-  static const Color textSub = Color(0xFF64748B);
+  static const Color primaryColor = Color(0xFF1A56DB);
+  static const Color backgroundLight = Color(0xFFF8FAFC);
+  static const Color textMain = Color(0xFF1E293B);
+  static const Color textSecondary = Color(0xFF64748B);
+  static const Color textMuted = Color(0xFF94A3B8);
   static const Color surfaceLight = Color(0xFFFFFFFF);
-  static const Color borderLight = Color(0xFFF1F5F9);
+  static const Color borderLight = Color(0xFFE2E8F0);
+  static const Color dangerColor = Color(0xFFDC2626);
+  static const Color dangerBg = Color(0xFFFEF2F2);
+  static const Color dangerBorder = Color(0xFFFECACA);
 
   @override
   Widget build(BuildContext context) {
@@ -20,18 +25,14 @@ class EmployeeProfileView extends StatelessWidget {
           child: Column(
             children: [
               const SizedBox(height: 24),
-              // Profile Header
               _buildProfileHeader(),
-              const SizedBox(height: 32),
-              // Stats Row
+              const SizedBox(height: 28),
               _buildStatsRow(),
               const SizedBox(height: 24),
-              // Menu Items
               _buildMenuSection(),
               const SizedBox(height: 24),
-              // Logout Button
               _buildLogoutButton(context),
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
             ],
           ),
         ),
@@ -42,61 +43,60 @@ class EmployeeProfileView extends StatelessWidget {
   Widget _buildProfileHeader() {
     return Column(
       children: [
-        // Avatar
         Container(
-          width: 96,
-          height: 96,
+          width: 88,
+          height: 88,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: const Color(0xFFE8C9A0),
-            border: Border.all(color: Colors.white, width: 4),
+            border: Border.all(color: Colors.white, width: 3),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
-          child: const Icon(
-            Icons.person,
-            size: 48,
+          child: Icon(
+            Icons.person_rounded,
+            size: 40,
             color: Colors.white,
           ),
         ),
-        const SizedBox(height: 16),
-        // Name
-        const Text(
+        const SizedBox(height: 14),
+        Text(
           'Alex Morgan',
           style: TextStyle(
             color: textMain,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.3,
           ),
         ),
-        const SizedBox(height: 4),
-        // Role
-        const Text(
+        const SizedBox(height: 3),
+        Text(
           'Senior Developer',
           style: TextStyle(
-            color: textSub,
+            color: textSecondary,
             fontSize: 14,
+            fontWeight: FontWeight.w400,
           ),
         ),
-        const SizedBox(height: 4),
-        // Employee ID
+        const SizedBox(height: 8),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: primaryColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
+            color: primaryColor.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(8),
           ),
-          child: const Text(
+          child: Text(
             'EMP-2024-001',
             style: TextStyle(
               color: primaryColor,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
             ),
           ),
         ),
@@ -110,9 +110,17 @@ class EmployeeProfileView extends StatelessWidget {
       child: Row(
         children: [
           Expanded(child: _buildStatItem('Present', '22')),
-          Container(width: 1, height: 40, color: borderLight),
+          Container(
+            width: 1,
+            height: 36,
+            color: borderLight,
+          ),
           Expanded(child: _buildStatItem('Leaves', '3')),
-          Container(width: 1, height: 40, color: borderLight),
+          Container(
+            width: 1,
+            height: 36,
+            color: borderLight,
+          ),
           Expanded(child: _buildStatItem('Late', '1')),
         ],
       ),
@@ -124,18 +132,20 @@ class EmployeeProfileView extends StatelessWidget {
       children: [
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             color: textMain,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.5,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(
           label,
-          style: const TextStyle(
-            color: textSub,
+          style: TextStyle(
+            color: textMuted,
             fontSize: 12,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
@@ -144,29 +154,29 @@ class EmployeeProfileView extends StatelessWidget {
 
   Widget _buildMenuSection() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         decoration: BoxDecoration(
           color: surfaceLight,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: borderLight),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
         child: Column(
           children: [
-            _buildMenuItem(Icons.person_outline, 'Personal Information'),
+            _buildMenuItem(Icons.person_outline_rounded, 'Personal Information'),
             _buildDivider(),
             _buildMenuItem(Icons.notifications_outlined, 'Notifications'),
             _buildDivider(),
-            _buildMenuItem(Icons.lock_outline, 'Change Password'),
+            _buildMenuItem(Icons.lock_outline_rounded, 'Change Password'),
             _buildDivider(),
-            _buildMenuItem(Icons.help_outline, 'Help & Support'),
+            _buildMenuItem(Icons.help_outline_rounded, 'Help & Support'),
           ],
         ),
       ),
@@ -175,22 +185,26 @@ class EmployeeProfileView extends StatelessWidget {
 
   Widget _buildMenuItem(IconData icon, String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
       child: Row(
         children: [
-          Icon(icon, color: textSub, size: 22),
-          const SizedBox(width: 16),
+          Icon(icon, color: textSecondary, size: 20),
+          const SizedBox(width: 14),
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 color: textMain,
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.w500,
               ),
             ),
           ),
-          Icon(Icons.chevron_right, color: textSub.withOpacity(0.5), size: 20),
+          Icon(
+            Icons.chevron_right_rounded,
+            color: textMuted,
+            size: 20,
+          ),
         ],
       ),
     );
@@ -200,35 +214,42 @@ class EmployeeProfileView extends StatelessWidget {
     return Container(
       height: 1,
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      color: borderLight,
+      color: borderLight.withOpacity(0.8),
     );
   }
 
   Widget _buildLogoutButton(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: GestureDetector(
-        onTap: () {
-          Navigator.of(context).pushNamedAndRemoveUntil('/employee-login', (route) => false);
+        onTap: () async {
+          await AuthService.logout();
+          if (context.mounted) {
+            Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+          }
         },
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          height: 48,
           decoration: BoxDecoration(
-            color: const Color(0xFFFEF2F2),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFFECACA)),
+            color: dangerBg.withOpacity(0.7),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: dangerBorder.withOpacity(0.6)),
           ),
-          child: const Row(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.logout, color: Color(0xFFDC2626), size: 20),
-              SizedBox(width: 8),
+              Icon(
+                Icons.logout_rounded,
+                color: dangerColor,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
               Text(
                 'Log Out',
                 style: TextStyle(
-                  color: Color(0xFFDC2626),
-                  fontSize: 16,
+                  color: dangerColor,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
               ),
