@@ -4,10 +4,12 @@ class AdminEmployeesView extends StatelessWidget {
   const AdminEmployeesView({super.key});
 
   static const Color primaryColor = Color(0xFF135BEC);
-  static const Color backgroundLight = Color(0xFFF6F6F8);
-  static const Color textMain = Color(0xFF0F172A);
-  static const Color textSub = Color(0xFF64748B);
-  static const Color borderColor = Color(0xFFF1F5F9);
+  static const Color backgroundLight = Color(0xFFF7F8FA);
+  static const Color textMain = Color(0xFF1A1F36);
+  static const Color textSub = Color(0xFF697386);
+  static const Color textMeta = Color(0xFF8792A2);
+  static const Color borderColor = Color(0xFFE3E8EE);
+  static const Color cardBg = Color(0xFFFFFFFF);
 
   @override
   Widget build(BuildContext context) {
@@ -18,18 +20,14 @@ class AdminEmployeesView extends StatelessWidget {
           children: [
             Column(
               children: [
-                // Top Bar
                 _buildTopBar(),
-                // Filter Tabs
                 _buildFilterTabs(),
-                // Employee List
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
                     child: Column(
                       children: [
-                        // Active Employees
                         _buildEmployeeCard(
                           name: 'Sarah Jenkins',
                           role: 'Senior Developer',
@@ -37,7 +35,7 @@ class AdminEmployeesView extends StatelessWidget {
                           isActive: true,
                           avatarColor: const Color(0xFFD4A574),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         _buildEmployeeCard(
                           name: 'David Kim',
                           role: 'Product Manager',
@@ -45,8 +43,7 @@ class AdminEmployeesView extends StatelessWidget {
                           isActive: true,
                           avatarColor: const Color(0xFF8B7355),
                         ),
-                        const SizedBox(height: 16),
-                        // Inactive Employee
+                        const SizedBox(height: 12),
                         _buildEmployeeCard(
                           name: 'Michael Ross',
                           role: 'Intern',
@@ -54,7 +51,7 @@ class AdminEmployeesView extends StatelessWidget {
                           isActive: false,
                           avatarColor: const Color(0xFF9CA3AF),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         _buildEmployeeCard(
                           name: 'Elena Rodriguez',
                           role: 'HR Specialist',
@@ -62,8 +59,7 @@ class AdminEmployeesView extends StatelessWidget {
                           isActive: true,
                           avatarColor: const Color(0xFFC49A6C),
                         ),
-                        const SizedBox(height: 16),
-                        // Inactive Employee with initials
+                        const SizedBox(height: 12),
                         _buildEmployeeCard(
                           name: 'James Wilson',
                           role: 'Marketing Assoc.',
@@ -79,10 +75,9 @@ class AdminEmployeesView extends StatelessWidget {
                 ),
               ],
             ),
-            // Floating Action Button
             Positioned(
               bottom: 24,
-              right: 24,
+              right: 16,
               child: _buildFAB(),
             ),
           ],
@@ -92,8 +87,14 @@ class AdminEmployeesView extends StatelessWidget {
   }
 
   Widget _buildTopBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      decoration: BoxDecoration(
+        color: backgroundLight,
+        border: Border(
+          bottom: BorderSide(color: borderColor.withOpacity(0.5), width: 1),
+        ),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -101,20 +102,24 @@ class AdminEmployeesView extends StatelessWidget {
             'Employees',
             style: TextStyle(
               color: textMain,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              letterSpacing: -0.5,
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.3,
             ),
           ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(
-              Icons.search,
-              color: textMain,
-              size: 26,
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: cardBg,
+              border: Border.all(color: borderColor),
             ),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
+            child: const Icon(
+              Icons.search,
+              color: textSub,
+              size: 20,
+            ),
           ),
         ],
       ),
@@ -123,19 +128,16 @@ class AdminEmployeesView extends StatelessWidget {
 
   Widget _buildFilterTabs() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
         child: Row(
           children: [
-            // All - Active
             _buildFilterChip('All', isSelected: true),
-            const SizedBox(width: 12),
-            // Active
+            const SizedBox(width: 8),
             _buildFilterChip('Active', isSelected: false),
-            const SizedBox(width: 12),
-            // Inactive
+            const SizedBox(width: 8),
             _buildFilterChip('Inactive', isSelected: false),
           ],
         ),
@@ -145,27 +147,18 @@ class AdminEmployeesView extends StatelessWidget {
 
   Widget _buildFilterChip(String label, {required bool isSelected}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: isSelected ? primaryColor : Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: isSelected ? null : Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: isSelected
-            ? [
-                BoxShadow(
-                  color: primaryColor.withOpacity(0.25),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : null,
+        color: isSelected ? primaryColor : cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: isSelected ? null : Border.all(color: borderColor),
       ),
       child: Text(
         label,
         style: TextStyle(
-          color: isSelected ? Colors.white : const Color(0xFF475569),
-          fontSize: 14,
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+          color: isSelected ? Colors.white : textSub,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
@@ -181,39 +174,33 @@ class AdminEmployeesView extends StatelessWidget {
     String? initials,
   }) {
     return Opacity(
-      opacity: isActive ? 1.0 : 0.7,
+      opacity: isActive ? 1.0 : 0.65,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isActive ? Colors.white : Colors.white.withOpacity(0.6),
+          color: cardBg,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isActive ? borderColor : borderColor.withOpacity(0.5),
-          ),
+          border: Border.all(color: borderColor),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
         child: Row(
           children: [
-            // Avatar with status indicator
             Stack(
               children: [
-                // Avatar
                 Container(
-                  width: 56,
-                  height: 56,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: avatarColor,
                     border: Border.all(
-                      color: isActive
-                          ? const Color(0xFFF8FAFC)
-                          : const Color(0xFFE2E8F0),
+                      color: isActive ? Colors.white : borderColor,
                       width: 2,
                     ),
                   ),
@@ -222,25 +209,24 @@ class AdminEmployeesView extends StatelessWidget {
                           child: Text(
                             initials ?? '',
                             style: TextStyle(
-                              color: textSub,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                              color: isActive ? textMain : textSub,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         )
                       : null,
                 ),
-                // Status dot
                 Positioned(
                   bottom: 0,
                   right: 0,
                   child: Container(
-                    width: 14,
-                    height: 14,
+                    width: 12,
+                    height: 12,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: isActive
-                          ? const Color(0xFF22C55E)
+                          ? const Color(0xFF10B981)
                           : const Color(0xFF9CA3AF),
                       border: Border.all(color: Colors.white, width: 2),
                     ),
@@ -248,22 +234,20 @@ class AdminEmployeesView extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(width: 16),
-            // Employee Info
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Name + Badge
                   Row(
                     children: [
                       Flexible(
                         child: Text(
                           name,
                           style: TextStyle(
-                            color: isActive ? textMain : const Color(0xFF64748B),
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                            color: isActive ? textMain : textSub,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -273,31 +257,29 @@ class AdminEmployeesView extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 2),
-                  // Role
                   Text(
                     role,
                     style: TextStyle(
-                      color: isActive ? primaryColor : textSub,
-                      fontSize: 14,
+                      color: isActive ? primaryColor : textMeta,
+                      fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  // Phone
                   Row(
                     children: [
                       Icon(
                         Icons.call_outlined,
-                        size: 14,
-                        color: textSub.withOpacity(0.7),
+                        size: 12,
+                        color: textMeta,
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 4),
                       Text(
                         phone,
-                        style: TextStyle(
-                          color: textSub.withOpacity(0.7),
-                          fontSize: 12,
+                        style: const TextStyle(
+                          color: textMeta,
+                          fontSize: 11,
                         ),
                       ),
                     ],
@@ -306,7 +288,6 @@ class AdminEmployeesView extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            // Toggle Switch
             _buildToggleSwitch(isActive),
           ],
         ),
@@ -316,19 +297,19 @@ class AdminEmployeesView extends StatelessWidget {
 
   Widget _buildStatusBadge(bool isActive) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: isActive
-            ? const Color(0xFFDCFCE7)
-            : const Color(0xFFF1F5F9),
+            ? const Color(0xFFECFDF5)
+            : const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         isActive ? 'Active' : 'Inactive',
         style: TextStyle(
           color: isActive
-              ? const Color(0xFF15803D)
-              : const Color(0xFF64748B),
+              ? const Color(0xFF10B981)
+              : textMeta,
           fontSize: 10,
           fontWeight: FontWeight.w500,
         ),
@@ -338,11 +319,11 @@ class AdminEmployeesView extends StatelessWidget {
 
   Widget _buildToggleSwitch(bool isOn) {
     return Container(
-      width: 48,
-      height: 28,
+      width: 44,
+      height: 24,
       decoration: BoxDecoration(
         color: isOn ? primaryColor : const Color(0xFFE2E8F0),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Stack(
         children: [
@@ -351,16 +332,16 @@ class AdminEmployeesView extends StatelessWidget {
             left: isOn ? 22 : 2,
             top: 2,
             child: Container(
-              width: 24,
-              height: 24,
+              width: 20,
+              height: 20,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
                   ),
                 ],
               ),
@@ -373,23 +354,23 @@ class AdminEmployeesView extends StatelessWidget {
 
   Widget _buildFAB() {
     return Container(
-      width: 64,
-      height: 64,
+      width: 56,
+      height: 56,
       decoration: BoxDecoration(
         color: primaryColor,
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: primaryColor.withOpacity(0.45),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            color: primaryColor.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: const Icon(
         Icons.add,
         color: Colors.white,
-        size: 32,
+        size: 28,
       ),
     );
   }

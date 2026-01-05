@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.example.edapt_time"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // ndkVersion = flutter.ndkVersion  // Commented out - NDK not required for this app
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

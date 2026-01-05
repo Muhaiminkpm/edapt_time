@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'employee_shell_view.dart';
 
 class EmployeeLoginView extends StatelessWidget {
   const EmployeeLoginView({super.key});
@@ -40,7 +39,7 @@ class EmployeeLoginView extends StatelessWidget {
                         // Brand Section
                         _buildBrandSection(),
                         // Step 1 - Phone Input
-                        _buildStep1PhoneInput(),
+                        _buildStep1PhoneInput(context),
                         // Divider
                         _buildDivider(),
                         // Step 2 - OTP Verification
@@ -66,7 +65,7 @@ class EmployeeLoginView extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Back Button
+          // Switch to Admin Login
           Container(
             width: 40,
             height: 40,
@@ -75,7 +74,9 @@ class EmployeeLoginView extends StatelessWidget {
               color: Colors.transparent,
             ),
             child: IconButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.of(context).pushReplacementNamed('/admin-login');
+              },
               icon: const Icon(
                 Icons.arrow_back,
                 color: textMain,
@@ -143,7 +144,7 @@ class EmployeeLoginView extends StatelessWidget {
     );
   }
 
-  Widget _buildStep1PhoneInput() {
+  Widget _buildStep1PhoneInput(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
@@ -265,9 +266,7 @@ class EmployeeLoginView extends StatelessWidget {
             ),
             child: ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => const EmployeeShellView()),
-                );
+                Navigator.of(context).pushReplacementNamed('/employee-home');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,

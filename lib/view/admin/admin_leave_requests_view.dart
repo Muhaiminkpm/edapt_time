@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 class AdminLeaveRequestsView extends StatelessWidget {
   const AdminLeaveRequestsView({super.key});
 
-  static const Color primaryColor = Color(0xFF0D6CF2);
-  static const Color backgroundLight = Color(0xFFF5F7F8);
-  static const Color surfaceLight = Color(0xFFFFFFFF);
-  static const Color borderLight = Color(0xFFE2E8F0);
-  static const Color textMain = Color(0xFF0F172A);
-  static const Color textSub = Color(0xFF64748B);
+  static const Color primaryColor = Color(0xFF135BEC);
+  static const Color backgroundLight = Color(0xFFF7F8FA);
+  static const Color cardBg = Color(0xFFFFFFFF);
+  static const Color borderColor = Color(0xFFE3E8EE);
+  static const Color textMain = Color(0xFF1A1F36);
+  static const Color textSub = Color(0xFF697386);
+  static const Color textMeta = Color(0xFF8792A2);
 
   @override
   Widget build(BuildContext context) {
@@ -17,11 +18,8 @@ class AdminLeaveRequestsView extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Header
             _buildHeader(),
-            // Status Summary
             _buildStatusSummary(),
-            // Scrollable Content
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
@@ -29,10 +27,8 @@ class AdminLeaveRequestsView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Pending Requests Section
                     _buildPendingRequestsSection(),
                     const SizedBox(height: 24),
-                    // Recent History Section
                     _buildRecentHistorySection(),
                   ],
                 ),
@@ -48,54 +44,51 @@ class AdminLeaveRequestsView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: backgroundLight.withOpacity(0.95),
+        color: backgroundLight,
         border: Border(
-          bottom: BorderSide(color: borderLight),
+          bottom: BorderSide(color: borderColor.withOpacity(0.6), width: 1),
         ),
       ),
       child: Row(
         children: [
-          // Back Button
           Container(
-            width: 48,
-            height: 48,
-            alignment: Alignment.centerLeft,
-            child: IconButton(
-              onPressed: () {},
-              icon: const Icon(
-                Icons.arrow_back,
-                color: textMain,
-                size: 24,
-              ),
-              padding: EdgeInsets.zero,
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: cardBg,
+              border: Border.all(color: borderColor),
+            ),
+            child: const Icon(
+              Icons.arrow_back,
+              color: textSub,
+              size: 20,
             ),
           ),
-          // Title
           const Expanded(
             child: Text(
               'Leave Requests',
               style: TextStyle(
                 color: textMain,
                 fontSize: 18,
-                fontWeight: FontWeight.bold,
-                letterSpacing: -0.3,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.2,
               ),
               textAlign: TextAlign.center,
             ),
           ),
-          // Filter Button
           Container(
-            width: 48,
-            height: 48,
-            alignment: Alignment.centerRight,
-            child: IconButton(
-              onPressed: () {},
-              icon: const Icon(
-                Icons.filter_list,
-                color: textMain,
-                size: 24,
-              ),
-              padding: EdgeInsets.zero,
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: cardBg,
+              border: Border.all(color: borderColor),
+            ),
+            child: const Icon(
+              Icons.filter_list,
+              color: textSub,
+              size: 20,
             ),
           ),
         ],
@@ -105,29 +98,29 @@ class AdminLeaveRequestsView extends StatelessWidget {
 
   Widget _buildStatusSummary() {
     return SizedBox(
-      height: 100,
+      height: 72,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         physics: const BouncingScrollPhysics(),
         children: [
           _buildStatCard(
             icon: Icons.pending_actions_outlined,
-            iconColor: const Color(0xFFF97316),
+            iconColor: const Color(0xFFD97706),
             label: 'Pending',
             count: '5',
           ),
           const SizedBox(width: 12),
           _buildStatCard(
             icon: Icons.check_circle_outline,
-            iconColor: const Color(0xFF22C55E),
+            iconColor: const Color(0xFF10B981),
             label: 'Approved',
             count: '12',
           ),
           const SizedBox(width: 12),
           _buildStatCard(
             icon: Icons.cancel_outlined,
-            iconColor: const Color(0xFFEF4444),
+            iconColor: const Color(0xFFDC6B6B),
             label: 'Rejected',
             count: '2',
           ),
@@ -143,46 +136,41 @@ class AdminLeaveRequestsView extends StatelessWidget {
     required String count,
   }) {
     return Container(
-      width: 140,
-      padding: const EdgeInsets.all(16),
+      width: 120,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: surfaceLight,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderLight),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: cardBg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: borderColor),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Row(
         children: [
-          Row(
+          Icon(icon, color: iconColor, size: 18),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: iconColor, size: 20),
-              const SizedBox(width: 8),
+              Text(
+                count,
+                style: const TextStyle(
+                  color: textMain,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  height: 1.1,
+                ),
+              ),
               Text(
                 label,
                 style: const TextStyle(
-                  color: textSub,
-                  fontSize: 14,
+                  color: textMeta,
+                  fontSize: 11,
                   fontWeight: FontWeight.w500,
+                  height: 1.2,
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            count,
-            style: const TextStyle(
-              color: textMain,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
           ),
         ],
       ),
@@ -194,26 +182,24 @@ class AdminLeaveRequestsView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.only(bottom: 16),
+          padding: EdgeInsets.only(bottom: 12),
           child: Text(
             'Pending Requests',
             style: TextStyle(
               color: textMain,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              letterSpacing: -0.3,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.2,
             ),
           ),
         ),
-        // Request Card 1
         _buildPendingRequestCard(
           name: 'Sarah Jenkins',
           leaveType: 'Sick Leave',
           dateRange: 'Oct 24 - Oct 25 • 2 Days',
           avatarColor: const Color(0xFFD4A574),
         ),
-        const SizedBox(height: 16),
-        // Request Card 2
+        const SizedBox(height: 12),
         _buildPendingRequestCard(
           name: 'Michael Chen',
           leaveType: 'Annual Leave',
@@ -231,36 +217,33 @@ class AdminLeaveRequestsView extends StatelessWidget {
     required Color avatarColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: surfaceLight,
+        color: cardBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderLight),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
       child: Column(
         children: [
-          // Top Row
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar
               Container(
-                width: 48,
-                height: 48,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: avatarColor,
                 ),
               ),
-              const SizedBox(width: 16),
-              // Info
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -272,11 +255,11 @@ class AdminLeaveRequestsView extends StatelessWidget {
                           name,
                           style: const TextStyle(
                             color: textMain,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        _buildStatusBadge('Pending', const Color(0xFFF97316)),
+                        _buildStatusBadge('Pending', const Color(0xFFD97706)),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -284,7 +267,7 @@ class AdminLeaveRequestsView extends StatelessWidget {
                       leaveType,
                       style: const TextStyle(
                         color: textSub,
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -292,7 +275,7 @@ class AdminLeaveRequestsView extends StatelessWidget {
                     Text(
                       dateRange,
                       style: const TextStyle(
-                        color: textSub,
+                        color: textMeta,
                         fontSize: 12,
                       ),
                     ),
@@ -301,47 +284,44 @@ class AdminLeaveRequestsView extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          // Divider
+          const SizedBox(height: 12),
           Container(
             height: 1,
-            color: const Color(0xFFF1F5F9),
+            color: borderColor.withOpacity(0.6),
           ),
           const SizedBox(height: 12),
-          // Action Buttons
           Row(
             children: [
-              // Reject Button
               Expanded(
                 child: Container(
-                  height: 40,
+                  height: 36,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFFECACA)),
+                    border: Border.all(color: const Color(0xFFE5D0D0)),
+                    color: const Color(0xFFFDF7F7),
                   ),
                   child: const Center(
                     child: Text(
                       'Reject',
                       style: TextStyle(
-                        color: Color(0xFFDC2626),
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFB85C5C),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
-              // Approve Button
               Expanded(
                 child: Container(
-                  height: 40,
+                  height: 36,
                   decoration: BoxDecoration(
                     color: primaryColor,
                     borderRadius: BorderRadius.circular(8),
                     boxShadow: [
                       BoxShadow(
-                        color: primaryColor.withOpacity(0.25),
+                        color: primaryColor.withOpacity(0.2),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -352,8 +332,8 @@ class AdminLeaveRequestsView extends StatelessWidget {
                       'Approve',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -368,17 +348,16 @@ class AdminLeaveRequestsView extends StatelessWidget {
 
   Widget _buildStatusBadge(String text, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         text,
         style: TextStyle(
           color: color,
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.w500,
         ),
       ),
@@ -390,26 +369,24 @@ class AdminLeaveRequestsView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.only(bottom: 16),
+          padding: EdgeInsets.only(bottom: 12),
           child: Text(
             'Recent History',
             style: TextStyle(
               color: textMain,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              letterSpacing: -0.3,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.2,
             ),
           ),
         ),
-        // History Item 1
         _buildHistoryItem(
           name: 'David Smith',
           details: 'Personal Leave • Oct 20',
           isApproved: true,
           avatarColor: const Color(0xFF9CA3AF),
         ),
-        const SizedBox(height: 12),
-        // History Item 2
+        const SizedBox(height: 8),
         _buildHistoryItem(
           name: 'Emily Blunt',
           details: 'Unpaid Leave • Oct 18',
@@ -427,32 +404,23 @@ class AdminLeaveRequestsView extends StatelessWidget {
     required Color avatarColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: surfaceLight,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderLight),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: cardBg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: borderColor),
       ),
       child: Row(
         children: [
-          // Avatar
           Container(
-            width: 48,
-            height: 48,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: avatarColor,
             ),
           ),
-          const SizedBox(width: 16),
-          // Info
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -461,22 +429,21 @@ class AdminLeaveRequestsView extends StatelessWidget {
                   name,
                   style: const TextStyle(
                     color: textMain,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   details,
                   style: const TextStyle(
-                    color: textSub,
-                    fontSize: 14,
+                    color: textMeta,
+                    fontSize: 12,
                   ),
                 ),
               ],
             ),
           ),
-          // Status Badge
           _buildHistoryStatusBadge(isApproved),
         ],
       ),
@@ -484,28 +451,27 @@ class AdminLeaveRequestsView extends StatelessWidget {
   }
 
   Widget _buildHistoryStatusBadge(bool isApproved) {
-    final Color color = isApproved ? const Color(0xFF22C55E) : const Color(0xFFEF4444);
+    final Color color = isApproved ? const Color(0xFF10B981) : const Color(0xFFDC6B6B);
     final String text = isApproved ? 'Approved' : 'Rejected';
     final IconData icon = isApproved ? Icons.check_circle : Icons.cancel;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.15)),
+        borderRadius: BorderRadius.circular(4),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: 16),
+          Icon(icon, color: color, size: 14),
           const SizedBox(width: 4),
           Text(
             text,
             style: TextStyle(
               color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],

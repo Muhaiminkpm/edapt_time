@@ -20,7 +20,7 @@ class AdminShiftRulesView extends StatelessWidget {
             Column(
               children: [
                 // Header
-                _buildHeader(),
+                _buildHeader(context),
                 // Scrollable Content
                 Expanded(
                   child: SingleChildScrollView(
@@ -57,7 +57,7 @@ class AdminShiftRulesView extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -70,7 +70,7 @@ class AdminShiftRulesView extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              onPressed: () {},
+              onPressed: () => Navigator.of(context).pop(),
               icon: const Icon(
                 Icons.arrow_back_ios_new,
                 color: textMain,

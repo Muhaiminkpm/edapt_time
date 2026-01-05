@@ -4,11 +4,12 @@ class AdminProfileView extends StatelessWidget {
   const AdminProfileView({super.key});
 
   static const Color primaryColor = Color(0xFF135BEC);
-  static const Color backgroundLight = Color(0xFFF6F6F8);
-  static const Color textMain = Color(0xFF0F172A);
-  static const Color textSub = Color(0xFF64748B);
-  static const Color surfaceLight = Color(0xFFFFFFFF);
-  static const Color borderLight = Color(0xFFF1F5F9);
+  static const Color backgroundLight = Color(0xFFF7F8FA);
+  static const Color textMain = Color(0xFF1A1F36);
+  static const Color textSub = Color(0xFF697386);
+  static const Color textMeta = Color(0xFF8792A2);
+  static const Color cardBg = Color(0xFFFFFFFF);
+  static const Color borderColor = Color(0xFFE3E8EE);
 
   @override
   Widget build(BuildContext context) {
@@ -19,16 +20,13 @@ class AdminProfileView extends StatelessWidget {
           physics: const BouncingScrollPhysics(),
           child: Column(
             children: [
-              const SizedBox(height: 24),
-              // Profile Header
+              const SizedBox(height: 32),
               _buildProfileHeader(),
               const SizedBox(height: 32),
-              // Menu Items
               _buildMenuSection(),
               const SizedBox(height: 24),
-              // Logout Button
               _buildLogoutButton(context),
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
             ],
           ),
         ),
@@ -39,44 +37,41 @@ class AdminProfileView extends StatelessWidget {
   Widget _buildProfileHeader() {
     return Column(
       children: [
-        // Avatar
         Container(
-          width: 96,
-          height: 96,
+          width: 88,
+          height: 88,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: const Color(0xFFE8C9A0),
-            border: Border.all(color: Colors.white, width: 4),
+            border: Border.all(color: Colors.white, width: 3),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 16,
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
             ],
           ),
           child: const Icon(
             Icons.person,
-            size: 48,
+            size: 40,
             color: Colors.white,
           ),
         ),
         const SizedBox(height: 16),
-        // Name
         const Text(
           'Admin User',
           style: TextStyle(
             color: textMain,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 4),
-        // Email
         const Text(
           'admin@edapt.com',
           style: TextStyle(
-            color: textSub,
+            color: textMeta,
             fontSize: 14,
           ),
         ),
@@ -86,19 +81,12 @@ class AdminProfileView extends StatelessWidget {
 
   Widget _buildMenuSection() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
         decoration: BoxDecoration(
-          color: surfaceLight,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: borderLight),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: cardBg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor),
         ),
         child: Column(
           children: [
@@ -120,19 +108,19 @@ class AdminProfileView extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
-          Icon(icon, color: textSub, size: 22),
-          const SizedBox(width: 16),
+          Icon(icon, color: textSub, size: 20),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               title,
               style: const TextStyle(
                 color: textMain,
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.w500,
               ),
             ),
           ),
-          Icon(Icons.chevron_right, color: textSub.withOpacity(0.5), size: 20),
+          Icon(Icons.chevron_right, color: textMeta, size: 20),
         ],
       ),
     );
@@ -142,13 +130,13 @@ class AdminProfileView extends StatelessWidget {
     return Container(
       height: 1,
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      color: borderLight,
+      color: borderColor.withOpacity(0.6),
     );
   }
 
   Widget _buildLogoutButton(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: GestureDetector(
         onTap: () {
           Navigator.of(context).pushNamedAndRemoveUntil('/admin-login', (route) => false);
@@ -157,20 +145,20 @@ class AdminProfileView extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: const Color(0xFFFEF2F2),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFFECACA)),
+            color: const Color(0xFFFDF7F7),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFE5D0D0)),
           ),
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.logout, color: Color(0xFFDC2626), size: 20),
+              Icon(Icons.logout, color: Color(0xFFB85C5C), size: 18),
               SizedBox(width: 8),
               Text(
                 'Log Out',
                 style: TextStyle(
-                  color: Color(0xFFDC2626),
-                  fontSize: 16,
+                  color: Color(0xFFB85C5C),
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
               ),
