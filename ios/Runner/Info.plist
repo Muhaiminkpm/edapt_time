@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access required for attendance verification selfie</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Location access required to verify your work location</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Photo library access required for attendance photos</string>
 </dict>
 </plist>

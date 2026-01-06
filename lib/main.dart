@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'core/storage/auth_service.dart';
 import 'providers/leave_provider.dart';
 import 'providers/employee_provider.dart';
+import 'providers/attendance_provider.dart';
 import 'view/login_view.dart';
 import 'view/admin/admin_shell_view.dart';
 import 'view/employee/employee_shell_view.dart';
@@ -20,6 +21,7 @@ class EdaptTimeApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => LeaveProvider()),
         ChangeNotifierProvider(create: (_) => EmployeeProvider()),
+        ChangeNotifierProvider(create: (_) => AttendanceProvider()),
       ],
       child: MaterialApp(
         title: 'Edapt Time',

@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import '../../providers/attendance_provider.dart';
+import '../../core/storage/auth_service.dart';
 
-class EmployeeDashboardView extends StatelessWidget {
+class EmployeeDashboardView extends StatefulWidget {
   const EmployeeDashboardView({super.key});
 
+  @override
+  State<EmployeeDashboardView> createState() => _EmployeeDashboardViewState();
+}
+
+class _EmployeeDashboardViewState extends State<EmployeeDashboardView> {
   // Enterprise-grade color palette - calm and professional
   static const Color primaryColor = Color(0xFF1A56DB); // Deeper corporate blue
   static const Color primaryLight = Color(0xFF3B82F6);
@@ -15,42 +24,123 @@ class EmployeeDashboardView extends StatelessWidget {
   static const Color successColor = Color(0xFF16A34A); // Professional green
   static const Color warningColor = Color(0xFFEA580C); // Professional orange
 
+  int? _employeeId;
+  String _employeeName = 'Employee';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEmployeeData();
+  }
+
+  Future<void> _loadEmployeeData() async {
+    final employeeId = await AuthService.getLoggedInEmployeeId();
+    final employeeName = await AuthService.getLoggedInEmployeeName();
+    
+    if (mounted) {
+      setState(() {
+        _employeeId = employeeId;
+        _employeeName = employeeName ?? 'Employee';
+      });
+      
+      if (employeeId != null) {
+        // Load today's attendance
+        context.read<AttendanceProvider>().loadTodayAttendance(employeeId);
+      }
+    }
+  }
+
+  Future<void> _handlePunchAction() async {
+    if (_employeeId == null) {
+      _showError('Employee not logged in');
+      return;
+    }
+
+    final provider = context.read<AttendanceProvider>();
+    
+    bool success;
+    if (!provider.hasPunchedIn) {
+      // Punch In
+      success = await provider.punchIn(_employeeId!);
+      if (success && mounted) {
+        _showSuccess('Punched in successfully!');
+      }
+    } else if (!provider.hasPunchedOut) {
+      // Punch Out
+      success = await provider.punchOut(_employeeId!);
+      if (success && mounted) {
+        _showSuccess('Punched out successfully!');
+      }
+    } else {
+      _showError('Already completed attendance for today');
+      return;
+    }
+
+    if (!success && provider.error != null && mounted) {
+      _showError(provider.error!);
+    }
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: successColor,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundLight,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            _buildHeader(),
-            // Scrollable Content
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.only(bottom: 24),
-                child: Column(
-                  children: [
-                    // Date & Status
-                    _buildDateStatus(),
-                    // Live Timer
-                    _buildLiveTimer(),
-                    // Punch In Button
-                    _buildPunchInButton(),
-                    // Location Info
-                    _buildLocationInfo(),
-                    const SizedBox(height: 24),
-                    // Quick Stats
-                    _buildQuickStats(),
-                    const SizedBox(height: 20),
-                    // Shift Card
-                    _buildShiftCard(),
-                    const SizedBox(height: 24),
-                  ],
+        child: Consumer<AttendanceProvider>(
+          builder: (context, attendanceProvider, child) {
+            return Column(
+              children: [
+                // Header
+                _buildHeader(),
+                // Scrollable Content
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: Column(
+                      children: [
+                        // Date & Status
+                        _buildDateStatus(attendanceProvider),
+                        // Live Timer
+                        _buildLiveTimer(),
+                        // Punch Button
+                        _buildPunchButton(attendanceProvider),
+                        // Location Info
+                        _buildLocationInfo(attendanceProvider),
+                        const SizedBox(height: 24),
+                        // Quick Stats
+                        _buildQuickStats(attendanceProvider),
+                        const SizedBox(height: 20),
+                        // Shift Card
+                        _buildShiftCard(),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         ),
       ),
     );
@@ -100,8 +190,8 @@ class EmployeeDashboardView extends StatelessWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
+              children: [
+                const Text(
                   'Welcome back,',
                   style: TextStyle(
                     color: textSecondary,
@@ -110,10 +200,10 @@ class EmployeeDashboardView extends StatelessWidget {
                     height: 1.3,
                   ),
                 ),
-                SizedBox(height: 1),
+                const SizedBox(height: 1),
                 Text(
-                  'Alex Morgan',
-                  style: TextStyle(
+                  _employeeName,
+                  style: const TextStyle(
                     color: textMain,
                     fontSize: 17,
                     fontWeight: FontWeight.w600, // Semibold, not overly bold
@@ -141,7 +231,7 @@ class EmployeeDashboardView extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.notifications_outlined,
                   color: textSecondary,
                   size: 20, // Reduced size
@@ -167,24 +257,36 @@ class EmployeeDashboardView extends StatelessWidget {
     );
   }
 
-  Widget _buildDateStatus() {
+  Widget _buildDateStatus(AttendanceProvider provider) {
+    final now = DateTime.now();
+    final dateStr = DateFormat('EEE, d MMM yyyy').format(now);
+    
+    String statusText;
+    if (provider.hasPunchedOut) {
+      statusText = 'Completed for today';
+    } else if (provider.hasPunchedIn) {
+      statusText = 'Currently working';
+    } else {
+      statusText = "Ready to punch in";
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
-        children: const [
+        children: [
           Text(
-            'Mon, 12 Oct 2023',
-            style: TextStyle(
+            dateStr,
+            style: const TextStyle(
               color: textMain,
               fontSize: 18, // Slightly reduced
               fontWeight: FontWeight.w600,
               letterSpacing: -0.2,
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
-            "You're on time today",
-            style: TextStyle(
+            statusText,
+            style: const TextStyle(
               color: textSecondary,
               fontSize: 13,
               fontWeight: FontWeight.w400,
@@ -202,11 +304,11 @@ class EmployeeDashboardView extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildTimerCard('04', 'Hours'),
+          _buildTimerCard('--', 'Hours'),
           _buildTimerSeparator(),
-          _buildTimerCard('12', 'Minutes'),
+          _buildTimerCard('--', 'Minutes'),
           _buildTimerSeparator(),
-          _buildTimerCard('30', 'Seconds'),
+          _buildTimerCard('--', 'Seconds'),
         ],
       ),
     );
@@ -246,7 +348,7 @@ class EmployeeDashboardView extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               color: textMuted, // More secondary
               fontSize: 11,
               fontWeight: FontWeight.w500,
@@ -259,8 +361,8 @@ class EmployeeDashboardView extends StatelessWidget {
   }
 
   Widget _buildTimerSeparator() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+    return const Padding(
+      padding: EdgeInsets.only(bottom: 20),
       child: Text(
         ':',
         style: TextStyle(
@@ -272,84 +374,132 @@ class EmployeeDashboardView extends StatelessWidget {
     );
   }
 
-  Widget _buildPunchInButton() {
+  Widget _buildPunchButton(AttendanceProvider provider) {
+    // Determine button state
+    String buttonText;
+    String subText;
+    Color buttonColor;
+    Color buttonGradientEnd;
+    bool isEnabled;
+    IconData buttonIcon;
+
+    if (provider.isLoading) {
+      buttonText = 'Processing...';
+      subText = 'Please wait';
+      buttonColor = textSecondary;
+      buttonGradientEnd = textMuted;
+      isEnabled = false;
+      buttonIcon = Icons.hourglass_empty_rounded;
+    } else if (provider.hasPunchedOut) {
+      buttonText = 'Completed';
+      subText = 'See you tomorrow';
+      buttonColor = successColor;
+      buttonGradientEnd = const Color(0xFF15803D);
+      isEnabled = false;
+      buttonIcon = Icons.check_circle_rounded;
+    } else if (provider.hasPunchedIn) {
+      buttonText = 'Punch Out';
+      subText = 'Tap to confirm';
+      buttonColor = warningColor;
+      buttonGradientEnd = const Color(0xFFC2410C);
+      isEnabled = true;
+      buttonIcon = Icons.logout_rounded;
+    } else {
+      buttonText = 'Punch In';
+      subText = 'Tap to confirm';
+      buttonColor = primaryColor;
+      buttonGradientEnd = const Color(0xFF1E40AF);
+      isEnabled = true;
+      buttonIcon = Icons.fingerprint_rounded;
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 28),
       child: Column(
         children: [
           // Glow Effect Container - reduced aggression
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: primaryColor.withOpacity(0.18), // Reduced glow
-                  blurRadius: 32,
-                  spreadRadius: 4,
-                ),
-              ],
-            ),
+          GestureDetector(
+            onTap: isEnabled ? _handlePunchAction : null,
             child: Container(
-              width: 176, // Slightly smaller
-              height: 176,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    primaryColor,
-                    const Color(0xFF1E40AF), // Deeper blue
-                  ],
-                ),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.08),
-                  width: 3,
-                ),
                 boxShadow: [
                   BoxShadow(
-                    color: primaryColor.withOpacity(0.25), // Reduced
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
+                    color: buttonColor.withOpacity(isEnabled ? 0.18 : 0.08),
+                    blurRadius: 32,
+                    spreadRadius: 4,
                   ),
                 ],
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Fingerprint Icon Container - professional
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.15),
-                    ),
-                    child: const Icon(
-                      Icons.fingerprint_rounded,
-                      color: Colors.white,
-                      size: 36,
-                    ),
+              child: Container(
+                width: 176, // Slightly smaller
+                height: 176,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      buttonColor,
+                      buttonGradientEnd,
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Punch In',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.3,
-                    ),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.08),
+                    width: 3,
                   ),
-                  const SizedBox(height: 3),
-                  Text(
-                    'Tap to confirm',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.6), // More subtle
-                      fontSize: 11,
-                      fontWeight: FontWeight.w400,
+                  boxShadow: [
+                    BoxShadow(
+                      color: buttonColor.withOpacity(isEnabled ? 0.25 : 0.1),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+                child: provider.isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 3,
+                        ),
+                      )
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Icon Container - professional
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withOpacity(0.15),
+                            ),
+                            child: Icon(
+                              buttonIcon,
+                              color: Colors.white,
+                              size: 36,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            buttonText,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            subText,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.6), // More subtle
+                              fontSize: 11,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
               ),
             ),
           ),
@@ -358,19 +508,26 @@ class EmployeeDashboardView extends StatelessWidget {
     );
   }
 
-  Widget _buildLocationInfo() {
+  Widget _buildLocationInfo(AttendanceProvider provider) {
+    String locationText;
+    if (provider.todayAttendance?.punchInLocation != null) {
+      locationText = provider.todayAttendance!.punchInLocation!;
+    } else {
+      locationText = 'Location captured on punch';
+    }
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(
+        const Icon(
           Icons.location_on_outlined,
           color: textMuted, // More secondary
           size: 14,
         ),
         const SizedBox(width: 5),
         Text(
-          'Office Location: New York, NY',
-          style: TextStyle(
+          locationText,
+          style: const TextStyle(
             color: textMuted,
             fontSize: 13,
             fontWeight: FontWeight.w400,
@@ -380,7 +537,27 @@ class EmployeeDashboardView extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickStats() {
+  Widget _buildQuickStats(AttendanceProvider provider) {
+    final punchInTime = provider.getFormattedPunchInTime() ?? '--:--';
+    final punchOutTime = provider.getFormattedPunchOutTime() ?? '--:--';
+    
+    String checkInStatus;
+    if (provider.hasPunchedIn) {
+      checkInStatus = 'Recorded';
+    } else {
+      checkInStatus = 'Pending';
+    }
+
+    String checkOutStatus;
+    if (provider.hasPunchedOut) {
+      final workingHours = provider.getWorkingHours();
+      checkOutStatus = workingHours ?? 'Recorded';
+    } else if (provider.hasPunchedIn) {
+      checkOutStatus = 'Pending';
+    } else {
+      checkOutStatus = 'Not yet';
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
@@ -393,8 +570,8 @@ class EmployeeDashboardView extends StatelessWidget {
               bgColor: const Color(0xFFDCFCE7).withOpacity(0.7),
               label: 'Check In',
               labelColor: const Color(0xFF166534),
-              time: '09:00 AM',
-              status: 'On Time',
+              time: punchInTime,
+              status: checkInStatus,
             ),
           ),
           const SizedBox(width: 12),
@@ -406,8 +583,8 @@ class EmployeeDashboardView extends StatelessWidget {
               bgColor: const Color(0xFFFFEDD5).withOpacity(0.7),
               label: 'Check Out',
               labelColor: const Color(0xFFC2410C),
-              time: '--:--',
-              status: 'Not yet',
+              time: punchOutTime,
+              status: checkOutStatus,
             ),
           ),
         ],
@@ -476,7 +653,7 @@ class EmployeeDashboardView extends StatelessWidget {
           const SizedBox(height: 3),
           Text(
             status,
-            style: TextStyle(
+            style: const TextStyle(
               color: textMuted,
               fontSize: 11,
               fontWeight: FontWeight.w400,
@@ -539,14 +716,14 @@ class EmployeeDashboardView extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          children: [
+                          children: const [
                             Icon(
                               Icons.calendar_month_outlined,
                               color: primaryLight,
                               size: 18,
                             ),
-                            const SizedBox(width: 7),
-                            const Text(
+                            SizedBox(width: 7),
+                            Text(
                               "Today's Shift",
                               style: TextStyle(
                                 color: Colors.white,
@@ -567,10 +744,10 @@ class EmployeeDashboardView extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 3),
-                        Text(
+                        const Text(
                           'General Shift • 8h 00m',
                           style: TextStyle(
-                            color: const Color(0xFF64748B),
+                            color: Color(0xFF64748B),
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
                           ),
@@ -597,49 +774,6 @@ class EmployeeDashboardView extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildBottomNavBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: surfaceLight,
-        border: Border(
-          top: BorderSide(color: borderLight, width: 1),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(Icons.dashboard_rounded, 'Home', isActive: true),
-          _buildNavItem(Icons.calendar_today_outlined, 'History'),
-          _buildNavItem(Icons.groups_outlined, 'Team'),
-          _buildNavItem(Icons.person_outline_rounded, 'Profile'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, String label, {bool isActive = false}) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          color: isActive ? primaryColor : textMuted,
-          size: 22,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: isActive ? primaryColor : textMuted,
-            fontSize: 11,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-          ),
-        ),
-      ],
     );
   }
 }

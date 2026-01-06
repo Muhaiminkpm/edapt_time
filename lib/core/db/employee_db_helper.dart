@@ -3,10 +3,10 @@ import 'package:path/path.dart';
 import '../../models/employee_model.dart';
 
 /// SQLite database helper for employees.
-/// Shares database with LeaveDbHelper.
+/// Shares database with LeaveDbHelper and AttendanceDbHelper.
 class EmployeeDbHelper {
   static const String _databaseName = 'edapt_time.db';
-  static const int _databaseVersion = 2; // Incremented for employees table
+  static const int _databaseVersion = 3; // Version 3 adds attendance table
   static const String _tableEmployees = 'employees';
 
   static Database? _database;
@@ -50,6 +50,9 @@ class EmployeeDbHelper {
 
     // Employees table
     await _createEmployeesTable(db);
+
+    // Attendance table
+    await _createAttendanceTable(db);
   }
 
   /// Handle database upgrades.
@@ -57,6 +60,10 @@ class EmployeeDbHelper {
     if (oldVersion < 2) {
       // Add employees table in version 2
       await _createEmployeesTable(db);
+    }
+    if (oldVersion < 3) {
+      // Add attendance table in version 3
+      await _createAttendanceTable(db);
     }
   }
 
@@ -73,6 +80,25 @@ class EmployeeDbHelper {
         shift_end TEXT NOT NULL,
         is_active INTEGER NOT NULL DEFAULT 1,
         created_at TEXT NOT NULL
+      )
+    ''');
+  }
+
+  /// Create attendance table.
+  static Future<void> _createAttendanceTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS attendance (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        employee_id INTEGER NOT NULL,
+        date TEXT NOT NULL,
+        punch_in_time TEXT,
+        punch_in_photo_path TEXT,
+        punch_in_location TEXT,
+        punch_out_time TEXT,
+        punch_out_photo_path TEXT,
+        punch_out_location TEXT,
+        created_at TEXT NOT NULL,
+        UNIQUE(employee_id, date)
       )
     ''');
   }
