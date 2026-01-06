@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/employee_provider.dart';
 
-class AdminAddEmployeeView extends StatelessWidget {
+class AdminAddEmployeeView extends StatefulWidget {
   const AdminAddEmployeeView({super.key});
 
+  @override
+  State<AdminAddEmployeeView> createState() => _AdminAddEmployeeViewState();
+}
+
+class _AdminAddEmployeeViewState extends State<AdminAddEmployeeView> {
   static const Color primaryColor = Color(0xFF135BEC);
   static const Color backgroundLight = Color(0xFFF6F6F8);
   static const Color surfaceLight = Color(0xFFFFFFFF);
@@ -10,6 +17,109 @@ class AdminAddEmployeeView extends StatelessWidget {
   static const Color textMain = Color(0xFF111827);
   static const Color textSub = Color(0xFF6B7280);
   static const Color placeholderColor = Color(0xFF9CA3AF);
+  static const Color successColor = Color(0xFF22C55E);
+  static const Color errorColor = Color(0xFFDC2626);
+
+  // Form controllers
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  // Selected shift
+  String? _selectedShift;
+  final List<Map<String, String>> _shifts = [
+    {'label': 'Morning (9:00 AM - 5:00 PM)', 'start': '09:00', 'end': '17:00'},
+    {'label': 'Evening (2:00 PM - 10:00 PM)', 'start': '14:00', 'end': '22:00'},
+    {'label': 'Night (10:00 PM - 6:00 AM)', 'start': '22:00', 'end': '06:00'},
+  ];
+
+  // Loading state
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSave() async {
+    if (_isLoading) return;
+
+    // Validate inputs
+    if (_nameController.text.trim().isEmpty) {
+      _showSnackBar('Please enter employee name', isError: true);
+      return;
+    }
+    if (_emailController.text.trim().isEmpty) {
+      _showSnackBar('Please enter email address', isError: true);
+      return;
+    }
+    if (_passwordController.text.isEmpty) {
+      _showSnackBar('Please enter password', isError: true);
+      return;
+    }
+    if (_selectedShift == null) {
+      _showSnackBar('Please select shift timing', isError: true);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    // Find selected shift times
+    final shift = _shifts.firstWhere((s) => s['label'] == _selectedShift);
+
+    // Add employee via provider
+    final provider = Provider.of<EmployeeProvider>(context, listen: false);
+    final result = await provider.addEmployee(
+      name: _nameController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+      shiftStart: shift['start']!,
+      shiftEnd: shift['end']!,
+    );
+
+    setState(() => _isLoading = false);
+
+    if (!mounted) return;
+
+    if (result.success) {
+      _showSnackBar(result.message, isError: false);
+      // Clear form
+      _nameController.clear();
+      _emailController.clear();
+      _passwordController.clear();
+      setState(() => _selectedShift = null);
+      // Navigate back after short delay
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (mounted) Navigator.of(context).pop();
+    } else {
+      _showSnackBar(result.message, isError: true);
+    }
+  }
+
+  void _showSnackBar(String message, {required bool isError}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isError ? Icons.error_outline : Icons.check_circle_outline,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: isError ? errorColor : successColor,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,28 +148,30 @@ class AdminAddEmployeeView extends StatelessWidget {
                           label: 'Full Name',
                           placeholder: 'ex. John Doe',
                           icon: Icons.badge_outlined,
+                          controller: _nameController,
                         ),
+
                         const SizedBox(height: 20),
-                        // Phone Number
+                        // Email ID
                         _buildInputField(
-                          label: 'Phone Number',
-                          placeholder: 'ex. +1 234 567 890',
-                          icon: Icons.call_outlined,
+                          label: 'Email ID',
+                          placeholder: 'ex. john.doe@company.com',
+                          icon: Icons.mail_outline,
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
                         ),
                         const SizedBox(height: 20),
-                        // Role Dropdown
-                        _buildDropdownField(
-                          label: 'Role',
-                          placeholder: 'Select Role',
-                          icon: Icons.work_outline,
+                        // Password
+                        _buildInputField(
+                          label: 'Password',
+                          placeholder: 'Set initial password',
+                          icon: Icons.lock_outline,
+                          controller: _passwordController,
+                          obscureText: true,
                         ),
                         const SizedBox(height: 20),
                         // Shift Timing Dropdown
-                        _buildDropdownField(
-                          label: 'Shift Timing',
-                          placeholder: 'Select Shift',
-                          icon: Icons.schedule_outlined,
-                        ),
+                        _buildShiftDropdown(),
                         const SizedBox(height: 24),
                         // Working Days
                         _buildWorkingDays(),
@@ -98,7 +210,7 @@ class AdminAddEmployeeView extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              onPressed: () {},
+              onPressed: () => Navigator.of(context).pop(),
               icon: const Icon(
                 Icons.arrow_back_ios_new,
                 color: primaryColor,
@@ -153,9 +265,9 @@ class AdminAddEmployeeView extends StatelessWidget {
                 ),
                 child: Container(
                   margin: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFFF3F4F6),
+                    color: Color(0xFFF3F4F6),
                   ),
                   child: const Icon(
                     Icons.person,
@@ -204,6 +316,9 @@ class AdminAddEmployeeView extends StatelessWidget {
     required String label,
     required String placeholder,
     required IconData icon,
+    required TextEditingController controller,
+    TextInputType keyboardType = TextInputType.text,
+    bool obscureText = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,11 +349,22 @@ class AdminAddEmployeeView extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  placeholder,
+                child: TextField(
+                  controller: controller,
+                  keyboardType: keyboardType,
+                  obscureText: obscureText,
                   style: const TextStyle(
-                    color: placeholderColor,
+                    color: textMain,
                     fontSize: 15,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: placeholder,
+                    hintStyle: const TextStyle(
+                      color: placeholderColor,
+                      fontSize: 15,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
                   ),
                 ),
               ),
@@ -249,19 +375,15 @@ class AdminAddEmployeeView extends StatelessWidget {
     );
   }
 
-  Widget _buildDropdownField({
-    required String label,
-    required String placeholder,
-    required IconData icon,
-  }) {
+  Widget _buildShiftDropdown() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
+        const Padding(
+          padding: EdgeInsets.only(left: 4, bottom: 8),
           child: Text(
-            label,
-            style: const TextStyle(
+            'Shift Timing',
+            style: TextStyle(
               color: Color(0xFF374151),
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -277,28 +399,49 @@ class AdminAddEmployeeView extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 16),
-                child: Icon(icon, color: placeholderColor, size: 22),
+              const Padding(
+                padding: EdgeInsets.only(left: 16),
+                child: Icon(Icons.schedule_outlined, color: placeholderColor, size: 22),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  placeholder,
-                  style: const TextStyle(
-                    color: placeholderColor,
-                    fontSize: 15,
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedShift,
+                    hint: const Text(
+                      'Select Shift',
+                      style: TextStyle(
+                        color: placeholderColor,
+                        fontSize: 15,
+                      ),
+                    ),
+                    isExpanded: true,
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down,
+                      color: placeholderColor,
+                      size: 24,
+                    ),
+                    items: _shifts.map((shift) {
+                      return DropdownMenuItem<String>(
+                        value: shift['label'],
+                        child: Text(
+                          shift['label']!,
+                          style: const TextStyle(
+                            color: textMain,
+                            fontSize: 15,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedShift = value;
+                      });
+                    },
                   ),
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.only(right: 16),
-                child: Icon(
-                  Icons.keyboard_arrow_down,
-                  color: placeholderColor,
-                  size: 24,
-                ),
-              ),
+              const SizedBox(width: 8),
             ],
           ),
         ),
@@ -393,9 +536,9 @@ class AdminAddEmployeeView extends StatelessWidget {
           Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFFDCFCE7),
+              color: Color(0xFFDCFCE7),
             ),
             child: const Icon(
               Icons.verified_user_outlined,
@@ -405,10 +548,10 @@ class AdminAddEmployeeView extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           // Text
-          Expanded(
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
                   'Active Employee',
                   style: TextStyle(
@@ -474,37 +617,60 @@ class AdminAddEmployeeView extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: backgroundLight.withOpacity(0.95),
-        border: Border(
+        border: const Border(
           top: BorderSide(color: borderLight),
         ),
       ),
-      child: Container(
-        height: 56,
-        decoration: BoxDecoration(
-          color: primaryColor,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: primaryColor.withOpacity(0.35),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.save_outlined, color: Colors.white, size: 22),
-            SizedBox(width: 8),
-            Text(
-              'Save Details',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+      child: GestureDetector(
+        onTap: _isLoading ? null : _handleSave,
+        child: Container(
+          height: 56,
+          decoration: BoxDecoration(
+            color: _isLoading ? primaryColor.withOpacity(0.7) : primaryColor,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: primaryColor.withOpacity(0.35),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
-            ),
-          ],
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (_isLoading) ...[
+                const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Saving...',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ] else ...[
+                const Icon(Icons.save_outlined, color: Colors.white, size: 22),
+                const SizedBox(width: 8),
+                const Text(
+                  'Save Details',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

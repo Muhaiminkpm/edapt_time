@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/storage/auth_service.dart';
 import 'providers/leave_provider.dart';
+import 'providers/employee_provider.dart';
 import 'view/login_view.dart';
 import 'view/admin/admin_shell_view.dart';
 import 'view/employee/employee_shell_view.dart';
@@ -15,8 +16,11 @@ class EdaptTimeApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => LeaveProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LeaveProvider()),
+        ChangeNotifierProvider(create: (_) => EmployeeProvider()),
+      ],
       child: MaterialApp(
         title: 'Edapt Time',
         debugShowCheckedModeBanner: false,
@@ -38,6 +42,7 @@ class EdaptTimeApp extends StatelessWidget {
     );
   }
 }
+
 
 /// Checks login state on startup and routes accordingly.
 class AuthChecker extends StatefulWidget {

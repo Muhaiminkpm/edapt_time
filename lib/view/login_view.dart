@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../core/storage/auth_service.dart';
+import 'package:provider/provider.dart';
+import '../core/storage/auth_service.dart';
+import '../providers/employee_provider.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -52,18 +54,46 @@ class _LoginViewState extends State<LoginView> {
       return;
     }
 
-    // Validate credentials
-    final role = await AuthService.login(email, password);
+    // First, try admin login
+    final adminRole = await AuthService.loginAsAdmin(email, password);
 
     if (!mounted) return;
 
-    if (role == null) {
+    if (adminRole != null) {
+      // Admin login successful
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Invalid email or password';
+        _isSuccess = true;
+      });
+
+      await Future.delayed(const Duration(milliseconds: 400));
+
+      if (!mounted) return;
+      Navigator.of(context).pushReplacementNamed('/admin-home');
+      return;
+    }
+
+    // If not admin, try employee login via EmployeeProvider
+    final employeeProvider = Provider.of<EmployeeProvider>(context, listen: false);
+    final result = await employeeProvider.validateLogin(email, password);
+
+    if (!mounted) return;
+
+    if (!result.success) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = result.message;
       });
       return;
     }
+
+    // Employee login successful - save session
+    final employee = result.employee!;
+    await AuthService.saveEmployeeSession(
+      employeeId: employee.id!,
+      email: employee.email,
+      name: employee.name,
+    );
 
     // Show success state
     setState(() {
@@ -74,13 +104,7 @@ class _LoginViewState extends State<LoginView> {
     await Future.delayed(const Duration(milliseconds: 400));
 
     if (!mounted) return;
-
-    // Navigate based on role
-    if (role == AuthService.roleAdmin) {
-      Navigator.of(context).pushReplacementNamed('/admin-home');
-    } else {
-      Navigator.of(context).pushReplacementNamed('/employee-home');
-    }
+    Navigator.of(context).pushReplacementNamed('/employee-home');
   }
 
   @override

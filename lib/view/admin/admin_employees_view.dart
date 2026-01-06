@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/employee_provider.dart';
+import '../../models/employee_model.dart';
+import 'admin_add_employee_view.dart';
 
-class AdminEmployeesView extends StatelessWidget {
+class AdminEmployeesView extends StatefulWidget {
   const AdminEmployeesView({super.key});
 
+  @override
+  State<AdminEmployeesView> createState() => _AdminEmployeesViewState();
+}
+
+class _AdminEmployeesViewState extends State<AdminEmployeesView> {
   static const Color primaryColor = Color(0xFF135BEC);
   static const Color backgroundLight = Color(0xFFF7F8FA);
   static const Color textMain = Color(0xFF1A1F36);
@@ -10,6 +19,52 @@ class AdminEmployeesView extends StatelessWidget {
   static const Color textMeta = Color(0xFF8792A2);
   static const Color borderColor = Color(0xFFE3E8EE);
   static const Color cardBg = Color(0xFFFFFFFF);
+  static const Color errorColor = Color(0xFFDC2626);
+
+  @override
+  void initState() {
+    super.initState();
+    // Load employees when view is initialized
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<EmployeeProvider>(context, listen: false).loadEmployees();
+    });
+  }
+
+  Future<void> _confirmDeleteAll() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete All Employees?'),
+        content: const Text(
+          'This will permanently delete all employees from the database. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: errorColor),
+            child: const Text('Delete All'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true && mounted) {
+      final provider = Provider.of<EmployeeProvider>(context, listen: false);
+      final deleteResult = await provider.deleteAllEmployees();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(deleteResult.message),
+            backgroundColor: deleteResult.success ? Colors.green : errorColor,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,54 +78,59 @@ class AdminEmployeesView extends StatelessWidget {
                 _buildTopBar(),
                 _buildFilterTabs(),
                 Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-                    child: Column(
-                      children: [
-                        _buildEmployeeCard(
-                          name: 'Sarah Jenkins',
-                          role: 'Senior Developer',
-                          phone: '+1 555-0123',
-                          isActive: true,
-                          avatarColor: const Color(0xFFD4A574),
+                  child: Consumer<EmployeeProvider>(
+                    builder: (context, provider, child) {
+                      if (provider.isLoading) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      }
+
+                      if (provider.employees.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.people_outline,
+                                size: 64,
+                                color: textMeta,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No employees yet',
+                                style: TextStyle(
+                                  color: textSub,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Tap + to add your first employee',
+                                style: TextStyle(
+                                  color: textMeta,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      return RefreshIndicator(
+                        onRefresh: () => provider.loadEmployees(),
+                        child: ListView.separated(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                          itemCount: provider.employees.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final employee = provider.employees[index];
+                            return _buildEmployeeCard(employee: employee);
+                          },
                         ),
-                        const SizedBox(height: 12),
-                        _buildEmployeeCard(
-                          name: 'David Kim',
-                          role: 'Product Manager',
-                          phone: '+1 555-0145',
-                          isActive: true,
-                          avatarColor: const Color(0xFF8B7355),
-                        ),
-                        const SizedBox(height: 12),
-                        _buildEmployeeCard(
-                          name: 'Michael Ross',
-                          role: 'Intern',
-                          phone: '+1 555-0199',
-                          isActive: false,
-                          avatarColor: const Color(0xFF9CA3AF),
-                        ),
-                        const SizedBox(height: 12),
-                        _buildEmployeeCard(
-                          name: 'Elena Rodriguez',
-                          role: 'HR Specialist',
-                          phone: '+1 555-0222',
-                          isActive: true,
-                          avatarColor: const Color(0xFFC49A6C),
-                        ),
-                        const SizedBox(height: 12),
-                        _buildEmployeeCard(
-                          name: 'James Wilson',
-                          role: 'Marketing Assoc.',
-                          phone: '+1 555-0333',
-                          isActive: false,
-                          useInitials: true,
-                          initials: 'JW',
-                          avatarColor: const Color(0xFFE5E7EB),
-                        ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -78,7 +138,7 @@ class AdminEmployeesView extends StatelessWidget {
             Positioned(
               bottom: 24,
               right: 16,
-              child: _buildFAB(),
+              child: _buildFAB(context),
             ),
           ],
         ),
@@ -107,19 +167,43 @@ class AdminEmployeesView extends StatelessWidget {
               letterSpacing: -0.3,
             ),
           ),
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: cardBg,
-              border: Border.all(color: borderColor),
-            ),
-            child: const Icon(
-              Icons.search,
-              color: textSub,
-              size: 20,
-            ),
+          Row(
+            children: [
+              // Delete All Button
+              GestureDetector(
+                onTap: _confirmDeleteAll,
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: cardBg,
+                    border: Border.all(color: borderColor),
+                  ),
+                  child: const Icon(
+                    Icons.delete_outline,
+                    color: errorColor,
+                    size: 20,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Search Button
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: cardBg,
+                  border: Border.all(color: borderColor),
+                ),
+                child: const Icon(
+                  Icons.search,
+                  color: textSub,
+                  size: 20,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -164,15 +248,11 @@ class AdminEmployeesView extends StatelessWidget {
     );
   }
 
-  Widget _buildEmployeeCard({
-    required String name,
-    required String role,
-    required String phone,
-    required bool isActive,
-    required Color avatarColor,
-    bool useInitials = false,
-    String? initials,
-  }) {
+  Widget _buildEmployeeCard({required EmployeeModel employee}) {
+    final bool isActive = employee.isActive;
+    final String initials = _getInitials(employee.name);
+    final Color avatarColor = _getAvatarColor(employee.name);
+
     return Opacity(
       opacity: isActive ? 1.0 : 0.65,
       child: Container(
@@ -204,18 +284,16 @@ class AdminEmployeesView extends StatelessWidget {
                       width: 2,
                     ),
                   ),
-                  child: useInitials
-                      ? Center(
-                          child: Text(
-                            initials ?? '',
-                            style: TextStyle(
-                              color: isActive ? textMain : textSub,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        )
-                      : null,
+                  child: Center(
+                    child: Text(
+                      initials,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ),
                 Positioned(
                   bottom: 0,
@@ -243,7 +321,7 @@ class AdminEmployeesView extends StatelessWidget {
                     children: [
                       Flexible(
                         child: Text(
-                          name,
+                          employee.name,
                           style: TextStyle(
                             color: isActive ? textMain : textSub,
                             fontSize: 15,
@@ -258,7 +336,7 @@ class AdminEmployeesView extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    role,
+                    employee.email,
                     style: TextStyle(
                       color: isActive ? primaryColor : textMeta,
                       fontSize: 13,
@@ -270,13 +348,13 @@ class AdminEmployeesView extends StatelessWidget {
                   Row(
                     children: [
                       Icon(
-                        Icons.call_outlined,
+                        Icons.schedule_outlined,
                         size: 12,
                         color: textMeta,
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        phone,
+                        '${employee.shiftStart} - ${employee.shiftEnd}',
                         style: const TextStyle(
                           color: textMeta,
                           fontSize: 11,
@@ -288,11 +366,35 @@ class AdminEmployeesView extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            _buildToggleSwitch(isActive),
+            _buildToggleSwitch(employee),
           ],
         ),
       ),
     );
+  }
+
+  String _getInitials(String name) {
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    } else if (parts.isNotEmpty && parts[0].isNotEmpty) {
+      return parts[0][0].toUpperCase();
+    }
+    return '?';
+  }
+
+  Color _getAvatarColor(String name) {
+    final colors = [
+      const Color(0xFFD4A574),
+      const Color(0xFF8B7355),
+      const Color(0xFFC49A6C),
+      const Color(0xFF6B8E23),
+      const Color(0xFF4682B4),
+      const Color(0xFF9370DB),
+      const Color(0xFFCD853F),
+    ];
+    final index = name.hashCode.abs() % colors.length;
+    return colors[index];
   }
 
   Widget _buildStatusBadge(bool isActive) {
@@ -317,60 +419,80 @@ class AdminEmployeesView extends StatelessWidget {
     );
   }
 
-  Widget _buildToggleSwitch(bool isOn) {
-    return Container(
-      width: 44,
-      height: 24,
-      decoration: BoxDecoration(
-        color: isOn ? primaryColor : const Color(0xFFE2E8F0),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Stack(
-        children: [
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 200),
-            left: isOn ? 22 : 2,
-            top: 2,
-            child: Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 2,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
+  Widget _buildToggleSwitch(EmployeeModel employee) {
+    final bool isOn = employee.isActive;
+    return GestureDetector(
+      onTap: () async {
+        final provider = Provider.of<EmployeeProvider>(context, listen: false);
+        await provider.toggleEmployeeStatus(employee.id!, !isOn);
+      },
+      child: Container(
+        width: 44,
+        height: 24,
+        decoration: BoxDecoration(
+          color: isOn ? primaryColor : const Color(0xFFE2E8F0),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Stack(
+          children: [
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 200),
+              left: isOn ? 22 : 2,
+              top: 2,
+              child: Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 2,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildFAB() {
-    return Container(
-      width: 56,
-      height: 56,
-      decoration: BoxDecoration(
-        color: primaryColor,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: primaryColor.withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+  Widget _buildFAB(BuildContext context) {
+    return GestureDetector(
+      onTap: () async {
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const AdminAddEmployeeView(),
           ),
-        ],
-      ),
-      child: const Icon(
-        Icons.add,
-        color: Colors.white,
-        size: 28,
+        );
+        // Refresh list when returning from add employee
+        if (mounted) {
+          Provider.of<EmployeeProvider>(context, listen: false).loadEmployees();
+        }
+      },
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: primaryColor,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: primaryColor.withOpacity(0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+          size: 28,
+        ),
       ),
     );
   }
