@@ -32,7 +32,7 @@ class AttendanceProvider extends ChangeNotifier {
   String get _todayDate => DateFormat('yyyy-MM-dd').format(DateTime.now());
 
   /// Load today's attendance for an employee.
-  Future<void> loadTodayAttendance(int employeeId) async {
+  Future<void> loadTodayAttendance(String employeeId) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -52,7 +52,7 @@ class AttendanceProvider extends ChangeNotifier {
 
   /// Punch In: Capture selfie + location, save to database.
   /// Returns true on success, false on failure.
-  Future<bool> punchIn(int employeeId) async {
+  Future<bool> punchIn(String employeeId) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -117,7 +117,7 @@ class AttendanceProvider extends ChangeNotifier {
 
   /// Punch Out: Capture selfie + location, update existing record.
   /// Returns true on success, false on failure.
-  Future<bool> punchOut(int employeeId) async {
+  Future<bool> punchOut(String employeeId) async {
     _isLoading = true;
     _error = null;
     notifyListeners();

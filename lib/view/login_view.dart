@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../core/storage/auth_service.dart';
-import '../providers/employee_provider.dart';
+import '../providers/auth_provider.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -54,48 +53,21 @@ class _LoginViewState extends State<LoginView> {
       return;
     }
 
-    // First, try admin login
-    final adminRole = await AuthService.loginAsAdmin(email, password);
-
-    if (!mounted) return;
-
-    if (adminRole != null) {
-      // Admin login successful
-      setState(() {
-        _isLoading = false;
-        _isSuccess = true;
-      });
-
-      await Future.delayed(const Duration(milliseconds: 400));
-
-      if (!mounted) return;
-      Navigator.of(context).pushReplacementNamed('/admin-home');
-      return;
-    }
-
-    // If not admin, try employee login via EmployeeProvider
-    final employeeProvider = Provider.of<EmployeeProvider>(context, listen: false);
-    final result = await employeeProvider.validateLogin(email, password);
+    // Use AuthProvider for Firebase login
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final result = await authProvider.login(email, password);
 
     if (!mounted) return;
 
     if (!result.success) {
       setState(() {
         _isLoading = false;
-        _errorMessage = result.message;
+        _errorMessage = result.errorMessage ?? 'Login failed';
       });
       return;
     }
 
-    // Employee login successful - save session
-    final employee = result.employee!;
-    await AuthService.saveEmployeeSession(
-      employeeId: employee.id!,
-      email: employee.email,
-      name: employee.name,
-    );
-
-    // Show success state
+    // Login successful - show success state
     setState(() {
       _isLoading = false;
       _isSuccess = true;
@@ -104,7 +76,13 @@ class _LoginViewState extends State<LoginView> {
     await Future.delayed(const Duration(milliseconds: 400));
 
     if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed('/employee-home');
+
+    // Navigate based on role from Firestore
+    if (result.role == AuthProvider.roleAdmin) {
+      Navigator.of(context).pushReplacementNamed('/admin-home');
+    } else if (result.role == AuthProvider.roleEmployee) {
+      Navigator.of(context).pushReplacementNamed('/employee-home');
+    }
   }
 
   @override

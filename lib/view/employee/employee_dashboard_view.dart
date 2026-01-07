@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../providers/attendance_provider.dart';
-import '../../core/storage/auth_service.dart';
+import '../../providers/auth_provider.dart';
 
 class EmployeeDashboardView extends StatefulWidget {
   const EmployeeDashboardView({super.key});
@@ -24,29 +25,107 @@ class _EmployeeDashboardViewState extends State<EmployeeDashboardView> {
   static const Color successColor = Color(0xFF16A34A); // Professional green
   static const Color warningColor = Color(0xFFEA580C); // Professional orange
 
-  int? _employeeId;
+  String? _employeeId;
   String _employeeName = 'Employee';
+  
+  // Live timer for elapsed working time
+  Timer? _liveTimer;
+  Duration _elapsedTime = Duration.zero;
 
   @override
   void initState() {
     super.initState();
     _loadEmployeeData();
+    // Clear any previous error state on dashboard load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<AttendanceProvider>(context, listen: false);
+      provider.clearError();
+      // Start timer if already punched in
+      _startTimerIfNeeded();
+    });
+  }
+  
+  @override
+  void dispose() {
+    _liveTimer?.cancel();
+    super.dispose();
+  }
+  
+  /// Start the live timer if user has punched in but not punched out
+  void _startTimerIfNeeded() {
+    final provider = Provider.of<AttendanceProvider>(context, listen: false);
+    if (provider.hasPunchedIn && !provider.hasPunchedOut) {
+      _startTimer(provider);
+    }
+  }
+  
+  /// Start the live elapsed time timer
+  void _startTimer(AttendanceProvider provider) {
+    _liveTimer?.cancel();
+    
+    // Calculate initial elapsed time from punch in
+    final punchInTime = provider.todayAttendance?.punchInTime;
+    if (punchInTime != null) {
+      try {
+        final punchInDateTime = DateFormat('HH:mm:ss').parse(punchInTime);
+        final now = DateTime.now();
+        final todayPunchIn = DateTime(now.year, now.month, now.day, 
+            punchInDateTime.hour, punchInDateTime.minute, punchInDateTime.second);
+        _elapsedTime = now.difference(todayPunchIn);
+      } catch (e) {
+        _elapsedTime = Duration.zero;
+      }
+    }
+    
+    // Update every second
+    _liveTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) {
+        setState(() {
+          _elapsedTime += const Duration(seconds: 1);
+        });
+      }
+    });
+  }
+  
+  /// Stop the timer
+  void _stopTimer() {
+    _liveTimer?.cancel();
+    _liveTimer = null;
   }
 
   Future<void> _loadEmployeeData() async {
-    final employeeId = await AuthService.getLoggedInEmployeeId();
-    final employeeName = await AuthService.getLoggedInEmployeeName();
+    // Get user data from AuthProvider
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
+    final currentUser = authProvider.currentUser;
     
-    if (mounted) {
-      setState(() {
-        _employeeId = employeeId;
-        _employeeName = employeeName ?? 'Employee';
-      });
-      
-      if (employeeId != null) {
-        // Load today's attendance
-        context.read<AttendanceProvider>().loadTodayAttendance(employeeId);
+    String? employeeId;
+    
+    if (currentUser != null) {
+      employeeId = currentUser.uid;
+      if (mounted) {
+        setState(() {
+          _employeeId = currentUser.uid;
+          _employeeName = currentUser.name.isNotEmpty ? currentUser.name : 'Employee';
+        });
       }
+    } else {
+      // Fallback: Try to load from saved session
+      final userName = await AuthProvider.getLoggedInUserName();
+      final userId = await AuthProvider.getLoggedInUserId();
+      
+      if (mounted && userName != null) {
+        employeeId = userId;
+        setState(() {
+          _employeeId = userId;
+          _employeeName = userName;
+        });
+      }
+    }
+    
+    // Load today's attendance to show correct punch state
+    if (employeeId != null) {
+      await attendanceProvider.loadTodayAttendance(employeeId);
     }
   }
 
@@ -64,12 +143,17 @@ class _EmployeeDashboardViewState extends State<EmployeeDashboardView> {
       success = await provider.punchIn(_employeeId!);
       if (success && mounted) {
         _showSuccess('Punched in successfully!');
+        // Start the live timer
+        _elapsedTime = Duration.zero;
+        _startTimer(provider);
       }
     } else if (!provider.hasPunchedOut) {
       // Punch Out
       success = await provider.punchOut(_employeeId!);
       if (success && mounted) {
         _showSuccess('Punched out successfully!');
+        // Stop the live timer
+        _stopTimer();
       }
     } else {
       _showError('Already completed attendance for today');
@@ -122,7 +206,7 @@ class _EmployeeDashboardViewState extends State<EmployeeDashboardView> {
                         // Date & Status
                         _buildDateStatus(attendanceProvider),
                         // Live Timer
-                        _buildLiveTimer(),
+                        _buildLiveTimer(attendanceProvider),
                         // Punch Button
                         _buildPunchButton(attendanceProvider),
                         // Location Info
@@ -298,17 +382,42 @@ class _EmployeeDashboardViewState extends State<EmployeeDashboardView> {
     );
   }
 
-  Widget _buildLiveTimer() {
+  Widget _buildLiveTimer(AttendanceProvider provider) {
+    String hours = '--';
+    String minutes = '--';
+    String seconds = '--';
+    
+    if (provider.hasPunchedIn) {
+      if (provider.hasPunchedOut) {
+        // Show final working time from provider
+        final workingHours = provider.getWorkingHours();
+        if (workingHours != null) {
+          // Parse "Xh Ym" format
+          final match = RegExp(r'(\d+)h (\d+)m').firstMatch(workingHours);
+          if (match != null) {
+            hours = match.group(1)!.padLeft(2, '0');
+            minutes = match.group(2)!.padLeft(2, '0');
+            seconds = '00';
+          }
+        }
+      } else {
+        // Show live elapsed time
+        hours = _elapsedTime.inHours.toString().padLeft(2, '0');
+        minutes = (_elapsedTime.inMinutes % 60).toString().padLeft(2, '0');
+        seconds = (_elapsedTime.inSeconds % 60).toString().padLeft(2, '0');
+      }
+    }
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildTimerCard('--', 'Hours'),
+          _buildTimerCard(hours, 'Hours'),
           _buildTimerSeparator(),
-          _buildTimerCard('--', 'Minutes'),
+          _buildTimerCard(minutes, 'Minutes'),
           _buildTimerSeparator(),
-          _buildTimerCard('--', 'Seconds'),
+          _buildTimerCard(seconds, 'Seconds'),
         ],
       ),
     );

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/employee_provider.dart';
+import '../../providers/auth_provider.dart';
 
 class AdminAddEmployeeView extends StatefulWidget {
   const AdminAddEmployeeView({super.key});
@@ -24,6 +24,7 @@ class _AdminAddEmployeeViewState extends State<AdminAddEmployeeView> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _adminPasswordController = TextEditingController();
 
   // Selected shift
   String? _selectedShift;
@@ -41,6 +42,7 @@ class _AdminAddEmployeeViewState extends State<AdminAddEmployeeView> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _adminPasswordController.dispose();
     super.dispose();
   }
 
@@ -60,24 +62,29 @@ class _AdminAddEmployeeViewState extends State<AdminAddEmployeeView> {
       _showSnackBar('Please enter password', isError: true);
       return;
     }
+    if (_passwordController.text.length < 6) {
+      _showSnackBar('Password must be at least 6 characters', isError: true);
+      return;
+    }
     if (_selectedShift == null) {
       _showSnackBar('Please select shift timing', isError: true);
       return;
     }
 
+    // Show dialog to confirm admin credentials for session restoration
+    final adminEmail = await _promptAdminCredentials();
+    if (adminEmail == null) return; // User cancelled
+
     setState(() => _isLoading = true);
 
-    // Find selected shift times
-    final shift = _shifts.firstWhere((s) => s['label'] == _selectedShift);
-
-    // Add employee via provider
-    final provider = Provider.of<EmployeeProvider>(context, listen: false);
-    final result = await provider.addEmployee(
+    // Create employee via AuthProvider (Firebase Auth + Firestore)
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final result = await authProvider.createEmployee(
       name: _nameController.text.trim(),
       email: _emailController.text.trim(),
       password: _passwordController.text,
-      shiftStart: shift['start']!,
-      shiftEnd: shift['end']!,
+      adminEmail: adminEmail,
+      adminPassword: _adminPasswordController.text,
     );
 
     setState(() => _isLoading = false);
@@ -90,6 +97,7 @@ class _AdminAddEmployeeViewState extends State<AdminAddEmployeeView> {
       _nameController.clear();
       _emailController.clear();
       _passwordController.clear();
+      _adminPasswordController.clear();
       setState(() => _selectedShift = null);
       // Navigate back after short delay
       await Future.delayed(const Duration(milliseconds: 500));
@@ -97,6 +105,54 @@ class _AdminAddEmployeeViewState extends State<AdminAddEmployeeView> {
     } else {
       _showSnackBar(result.message, isError: true);
     }
+  }
+
+  /// Prompt admin to enter their credentials for session restoration
+  Future<String?> _promptAdminCredentials() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final adminEmail = authProvider.currentUser?.email ?? '';
+    
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Admin Password'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Enter your password to create employee account:',
+              style: TextStyle(fontSize: 14, color: textSub),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _adminPasswordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Admin Password',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.lock_outline),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, null),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (_adminPasswordController.text.isNotEmpty) {
+                Navigator.pop(context, adminEmail);
+              }
+            },
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showSnackBar(String message, {required bool isError}) {

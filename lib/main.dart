@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'core/storage/auth_service.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'providers/leave_provider.dart';
 import 'providers/employee_provider.dart';
 import 'providers/attendance_provider.dart';
+import 'providers/auth_provider.dart';
 import 'view/login_view.dart';
 import 'view/admin/admin_shell_view.dart';
 import 'view/employee/employee_shell_view.dart';
+import 'core/db/database_manager.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  // Initialize the database to ensure all tables are created
+  await DatabaseManager.database;
   runApp(const EdaptTimeApp());
 }
 
@@ -22,6 +28,7 @@ class EdaptTimeApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => LeaveProvider()),
         ChangeNotifierProvider(create: (_) => EmployeeProvider()),
         ChangeNotifierProvider(create: (_) => AttendanceProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
       child: MaterialApp(
         title: 'Edapt Time',
@@ -62,13 +69,14 @@ class _AuthCheckerState extends State<AuthChecker> {
   }
 
   Future<void> _checkLoginState() async {
-    final role = await AuthService.getLoggedInRole();
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final role = await authProvider.checkAuthState();
 
     if (!mounted) return;
 
-    if (role == AuthService.roleAdmin) {
+    if (role == AuthProvider.roleAdmin) {
       Navigator.of(context).pushReplacementNamed('/admin-home');
-    } else if (role == AuthService.roleEmployee) {
+    } else if (role == AuthProvider.roleEmployee) {
       Navigator.of(context).pushReplacementNamed('/employee-home');
     } else {
       Navigator.of(context).pushReplacementNamed('/login');

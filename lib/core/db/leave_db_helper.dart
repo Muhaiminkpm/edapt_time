@@ -1,50 +1,13 @@
 import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
 import '../../models/leave_model.dart';
+import 'database_manager.dart';
 
 /// SQLite database helper for leave requests.
 class LeaveDbHelper {
-  static const String _databaseName = 'edapt_time.db';
-  static const int _databaseVersion = 1;
   static const String _tableLeaves = 'leaves';
 
-  static Database? _database;
-
-  /// Get database instance (singleton).
-  static Future<Database> get database async {
-    if (_database != null) return _database!;
-    _database = await _initDatabase();
-    return _database!;
-  }
-
-  /// Initialize database.
-  static Future<Database> _initDatabase() async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, _databaseName);
-
-    return await openDatabase(
-      path,
-      version: _databaseVersion,
-      onCreate: _onCreate,
-    );
-  }
-
-  /// Create tables.
-  static Future<void> _onCreate(Database db, int version) async {
-    await db.execute('''
-      CREATE TABLE $_tableLeaves (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        employee_id TEXT NOT NULL,
-        employee_name TEXT NOT NULL,
-        from_date TEXT NOT NULL,
-        to_date TEXT NOT NULL,
-        leave_type TEXT NOT NULL,
-        reason TEXT,
-        status TEXT NOT NULL,
-        created_at TEXT NOT NULL
-      )
-    ''');
-  }
+  /// Get database instance from centralized manager.
+  static Future<Database> get database => DatabaseManager.database;
 
   /// Insert a new leave request.
   static Future<int> insertLeave(LeaveModel leave) async {

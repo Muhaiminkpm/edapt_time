@@ -1,107 +1,13 @@
 import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
 import '../../models/employee_model.dart';
+import 'database_manager.dart';
 
 /// SQLite database helper for employees.
-/// Shares database with LeaveDbHelper and AttendanceDbHelper.
 class EmployeeDbHelper {
-  static const String _databaseName = 'edapt_time.db';
-  static const int _databaseVersion = 3; // Version 3 adds attendance table
   static const String _tableEmployees = 'employees';
 
-  static Database? _database;
-
-  /// Get database instance (singleton).
-  static Future<Database> get database async {
-    if (_database != null) return _database!;
-    _database = await _initDatabase();
-    return _database!;
-  }
-
-  /// Initialize database.
-  static Future<Database> _initDatabase() async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, _databaseName);
-
-    return await openDatabase(
-      path,
-      version: _databaseVersion,
-      onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
-    );
-  }
-
-  /// Create tables.
-  static Future<void> _onCreate(Database db, int version) async {
-    // Leaves table (from LeaveDbHelper)
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS leaves (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        employee_id TEXT NOT NULL,
-        employee_name TEXT NOT NULL,
-        from_date TEXT NOT NULL,
-        to_date TEXT NOT NULL,
-        leave_type TEXT NOT NULL,
-        reason TEXT,
-        status TEXT NOT NULL,
-        created_at TEXT NOT NULL
-      )
-    ''');
-
-    // Employees table
-    await _createEmployeesTable(db);
-
-    // Attendance table
-    await _createAttendanceTable(db);
-  }
-
-  /// Handle database upgrades.
-  static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      // Add employees table in version 2
-      await _createEmployeesTable(db);
-    }
-    if (oldVersion < 3) {
-      // Add attendance table in version 3
-      await _createAttendanceTable(db);
-    }
-  }
-
-  /// Create employees table.
-  static Future<void> _createEmployeesTable(Database db) async {
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS $_tableEmployees (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        email TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL,
-        role TEXT NOT NULL DEFAULT 'employee',
-        shift_start TEXT NOT NULL,
-        shift_end TEXT NOT NULL,
-        is_active INTEGER NOT NULL DEFAULT 1,
-        created_at TEXT NOT NULL
-      )
-    ''');
-  }
-
-  /// Create attendance table.
-  static Future<void> _createAttendanceTable(Database db) async {
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS attendance (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        employee_id INTEGER NOT NULL,
-        date TEXT NOT NULL,
-        punch_in_time TEXT,
-        punch_in_photo_path TEXT,
-        punch_in_location TEXT,
-        punch_out_time TEXT,
-        punch_out_photo_path TEXT,
-        punch_out_location TEXT,
-        created_at TEXT NOT NULL,
-        UNIQUE(employee_id, date)
-      )
-    ''');
-  }
+  /// Get database instance from centralized manager.
+  static Future<Database> get database => DatabaseManager.database;
 
   /// Insert a new employee.
   /// Returns the inserted row ID, or -1 if email already exists.

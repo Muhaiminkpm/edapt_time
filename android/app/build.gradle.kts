@@ -3,10 +3,12 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    // Google Services for Firebase
+    id("com.google.gms.google-services")
 }
 
 android {
-    namespace = "com.example.edapt_time"
+    namespace = "com.edapt.edapt_time"
     compileSdk = flutter.compileSdkVersion
     // ndkVersion = flutter.ndkVersion  // Commented out - NDK not required for this app
 
@@ -20,8 +22,8 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.edapt_time"
+        // Application ID must match Firebase registration
+        applicationId = "com.edapt.edapt_time"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

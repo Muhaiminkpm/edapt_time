@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../providers/attendance_provider.dart';
-import '../../providers/employee_provider.dart';
 import '../../models/attendance_model.dart';
+import '../../core/services/firestore_user_service.dart';
 
 class AdminAttendanceView extends StatefulWidget {
   const AdminAttendanceView({super.key});
@@ -21,6 +21,11 @@ class _AdminAttendanceViewState extends State<AdminAttendanceView> {
   static const Color surfaceLight = Color(0xFFFFFFFF);
   static const Color borderLight = Color(0xFFF1F5F9);
 
+  // Cache for employee names from Firestore (keyed by Firebase UID)
+  Map<String, String> _employeeNames = {};
+  bool _isLoadingEmployees = true;
+  int _totalEmployeeCount = 0;
+
   @override
   void initState() {
     super.initState();
@@ -28,8 +33,28 @@ class _AdminAttendanceViewState extends State<AdminAttendanceView> {
   }
 
   Future<void> _loadData() async {
-    await context.read<EmployeeProvider>().loadEmployees();
-    await context.read<AttendanceProvider>().loadTodayAllAttendance();
+    // Load employees from Firestore
+    setState(() => _isLoadingEmployees = true);
+    try {
+      final employees = await FirestoreUserService.getAllEmployees();
+      _employeeNames = {
+        for (var e in employees) e.uid: e.name,
+      };
+      _totalEmployeeCount = employees.length;
+    } catch (e) {
+      debugPrint('Error loading employees from Firestore: $e');
+    }
+    setState(() => _isLoadingEmployees = false);
+    
+    // Load attendance records
+    if (mounted) {
+      await context.read<AttendanceProvider>().loadTodayAllAttendance();
+    }
+  }
+
+  /// Get employee name from cache, or return fallback
+  String _getEmployeeName(String employeeId) {
+    return _employeeNames[employeeId] ?? 'Unknown Employee';
   }
 
   @override
@@ -49,9 +74,9 @@ class _AdminAttendanceViewState extends State<AdminAttendanceView> {
             ),
             // Content
             Expanded(
-              child: Consumer2<AttendanceProvider, EmployeeProvider>(
-                builder: (context, attendanceProvider, employeeProvider, child) {
-                  if (attendanceProvider.isLoading) {
+              child: Consumer<AttendanceProvider>(
+                builder: (context, attendanceProvider, child) {
+                  if (attendanceProvider.isLoading || _isLoadingEmployees) {
                     return const Center(child: CircularProgressIndicator());
                   }
 
@@ -98,20 +123,17 @@ class _AdminAttendanceViewState extends State<AdminAttendanceView> {
                           ),
                           const SizedBox(height: 16),
                           ...records.map((record) {
-                            // Get employee name
-                            final employee = employeeProvider.employees.firstWhere(
-                              (e) => e.id == record.employeeId,
-                              orElse: () => throw Exception('Employee not found'),
-                            );
+                            // Get employee name from Firestore cache
+                            final employeeName = _getEmployeeName(record.employeeId);
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 12),
                               child: _buildAttendanceItem(
                                 context,
                                 record,
-                                employee.name,
+                                employeeName,
                               ),
                             );
-                          }).toList(),
+                          }),
                         ],
                       ),
                     ),
@@ -171,8 +193,8 @@ class _AdminAttendanceViewState extends State<AdminAttendanceView> {
     final records = provider.allAttendance;
     final presentCount = records.where((r) => r.hasPunchedIn).length;
     final lateCount = 0; // Would need shift data to calculate
-    final totalEmployees = context.read<EmployeeProvider>().employees.length;
-    final absentCount = totalEmployees - presentCount;
+    // Use Firestore employee count
+    final absentCount = _totalEmployeeCount - presentCount;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),

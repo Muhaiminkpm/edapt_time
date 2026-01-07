@@ -3,7 +3,7 @@
 /// Supports punch in/out with selfie photo paths and location data.
 class AttendanceModel {
   final int? id;
-  final int employeeId;
+  final String employeeId; // Firestore UID
   final String date; // YYYY-MM-DD format
 
   // Punch In data
@@ -41,7 +41,7 @@ class AttendanceModel {
   factory AttendanceModel.fromMap(Map<String, dynamic> map) {
     return AttendanceModel(
       id: map['id'] as int?,
-      employeeId: map['employee_id'] as int,
+      employeeId: map['employee_id'] as String,
       date: map['date'] as String,
       punchInTime: map['punch_in_time'] as String?,
       punchInPhotoPath: map['punch_in_photo_path'] as String?,
@@ -72,7 +72,7 @@ class AttendanceModel {
   /// Create a copy with updated fields.
   AttendanceModel copyWith({
     int? id,
-    int? employeeId,
+    String? employeeId,
     String? date,
     String? punchInTime,
     String? punchInPhotoPath,

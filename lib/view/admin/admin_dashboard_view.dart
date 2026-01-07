@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../core/services/firestore_user_service.dart';
+import '../../core/db/attendance_db_helper.dart';
+import '../../models/attendance_model.dart';
 
-class AdminDashboardView extends StatelessWidget {
+class AdminDashboardView extends StatefulWidget {
   const AdminDashboardView({super.key});
 
+  @override
+  State<AdminDashboardView> createState() => _AdminDashboardViewState();
+}
+
+class _AdminDashboardViewState extends State<AdminDashboardView> {
   static const Color primaryColor = Color(0xFF135BEC);
   static const Color backgroundLight = Color(0xFFF7F8FA);
   static const Color textMain = Color(0xFF1A1F36);
@@ -10,6 +19,113 @@ class AdminDashboardView extends StatelessWidget {
   static const Color textMeta = Color(0xFF8792A2);
   static const Color borderColor = Color(0xFFE3E8EE);
   static const Color cardBg = Color(0xFFFFFFFF);
+  static const Color successColor = Color(0xFF10B981);
+  static const Color warningColor = Color(0xFFD97706);
+  static const Color dangerColor = Color(0xFFDC6B6B);
+
+  // Dashboard data
+  int _totalStaff = 0;
+  int _presentCount = 0;
+  int _absentCount = 0;
+  int _pendingCount = 0;
+  List<_RecentActivity> _recentActivities = [];
+  Map<String, String> _employeeNames = {};
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboardData();
+  }
+
+  Future<void> _loadDashboardData() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      // Load employees from Firestore
+      final employees = await FirestoreUserService.getAllEmployees();
+      _totalStaff = employees.length;
+      _employeeNames = {
+        for (var e in employees) e.uid: e.name,
+      };
+      
+      // Load today's attendance
+      final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final todayAttendance = await AttendanceDbHelper.getAttendanceByDate(todayStr);
+      
+      // Calculate stats
+      _presentCount = todayAttendance.where((a) => a.hasPunchedIn).length;
+      _pendingCount = todayAttendance.where((a) => a.hasPunchedIn && !a.hasPunchedOut).length;
+      _absentCount = _totalStaff - _presentCount;
+      if (_absentCount < 0) _absentCount = 0;
+      
+      // Build recent activities from today's attendance
+      _recentActivities = _buildRecentActivities(todayAttendance);
+      
+    } catch (e) {
+      debugPrint('Error loading dashboard data: $e');
+    }
+    
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  List<_RecentActivity> _buildRecentActivities(List<AttendanceModel> attendance) {
+    final activities = <_RecentActivity>[];
+    
+    // Sort by most recent activity first
+    final sorted = [...attendance];
+    sorted.sort((a, b) {
+      // Compare punch out time first, then punch in time
+      final aTime = a.punchOutTime ?? a.punchInTime ?? '';
+      final bTime = b.punchOutTime ?? b.punchInTime ?? '';
+      return bTime.compareTo(aTime);
+    });
+    
+    for (var record in sorted.take(5)) {
+      final employeeName = _employeeNames[record.employeeId] ?? 'Unknown Employee';
+      
+      if (record.hasPunchedOut) {
+        // Punch out activity
+        activities.add(_RecentActivity(
+          name: employeeName,
+          description: 'Checked out at ${_formatTime(record.punchOutTime)}',
+          status: 'Completed',
+          statusColor: successColor,
+          statusBgColor: const Color(0xFFECFDF5),
+        ));
+      } else if (record.hasPunchedIn) {
+        // Punch in activity
+        activities.add(_RecentActivity(
+          name: employeeName,
+          description: 'Checked in at ${_formatTime(record.punchInTime)}',
+          status: 'Working',
+          statusColor: primaryColor,
+          statusBgColor: const Color(0xFFEEF4FF),
+        ));
+      }
+    }
+    
+    return activities;
+  }
+
+  String _formatTime(String? time) {
+    if (time == null) return '--:--';
+    try {
+      final parsed = DateFormat('HH:mm:ss').parse(time);
+      return DateFormat('hh:mm a').format(parsed);
+    } catch (e) {
+      return time;
+    }
+  }
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,19 +136,24 @@ class AdminDashboardView extends StatelessWidget {
           children: [
             _buildAppBar(),
             Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildWelcomeSection(),
-                    _buildStatsGrid(),
-                    _buildQuickActions(),
-                    _buildRecentActivity(),
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : RefreshIndicator(
+                      onRefresh: _loadDashboardData,
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildWelcomeSection(),
+                            _buildStatsGrid(),
+                            _buildQuickActions(),
+                            _buildRecentActivity(),
+                            const SizedBox(height: 24),
+                          ],
+                        ),
+                      ),
+                    ),
             ),
           ],
         ),
@@ -79,18 +200,21 @@ class AdminDashboardView extends StatelessWidget {
               ),
             ),
           ),
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: cardBg,
-              border: Border.all(color: borderColor),
-            ),
-            child: const Icon(
-              Icons.notifications_outlined,
-              color: textSub,
-              size: 20,
+          GestureDetector(
+            onTap: _loadDashboardData,
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: cardBg,
+                border: Border.all(color: borderColor),
+              ),
+              child: const Icon(
+                Icons.refresh,
+                color: textSub,
+                size: 20,
+              ),
             ),
           ),
         ],
@@ -99,24 +223,26 @@ class AdminDashboardView extends StatelessWidget {
   }
 
   Widget _buildWelcomeSection() {
+    final today = DateFormat('EEE, d MMM yyyy').format(DateTime.now());
+    
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
+        children: [
           Text(
-            'Good Morning, Admin',
-            style: TextStyle(
+            '${_getGreeting()}, Admin',
+            style: const TextStyle(
               color: textMain,
               fontSize: 22,
               fontWeight: FontWeight.w700,
               letterSpacing: -0.4,
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
-            'Mon, 14 Oct 2023',
-            style: TextStyle(
+            today,
+            style: const TextStyle(
               color: textMeta,
               fontSize: 13,
               fontWeight: FontWeight.w500,
@@ -140,11 +266,19 @@ class AdminDashboardView extends StatelessWidget {
                   iconColor: primaryColor,
                   iconBgColor: const Color(0xFFEEF4FF),
                   label: 'Total Staff',
-                  value: '142',
+                  value: _totalStaff.toString(),
                 ),
               ),
               const SizedBox(width: 12),
-              Expanded(child: _buildPresentCard()),
+              Expanded(
+                child: _buildStatCard(
+                  icon: Icons.check_circle_outlined,
+                  iconColor: successColor,
+                  iconBgColor: const Color(0xFFECFDF5),
+                  label: 'Present',
+                  value: _presentCount.toString(),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -153,10 +287,10 @@ class AdminDashboardView extends StatelessWidget {
               Expanded(
                 child: _buildStatCard(
                   icon: Icons.person_off_outlined,
-                  iconColor: const Color(0xFFDC6B6B),
+                  iconColor: dangerColor,
                   iconBgColor: const Color(0xFFFDF2F2),
                   label: 'Absent',
-                  value: '14',
+                  value: _absentCount.toString(),
                 ),
               ),
               const SizedBox(width: 12),
@@ -231,65 +365,6 @@ class AdminDashboardView extends StatelessWidget {
     );
   }
 
-  Widget _buildPresentCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFECFDF5),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.check_circle_outlined,
-                  color: Color(0xFF10B981),
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Present',
-                style: TextStyle(
-                  color: textMeta,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            '128',
-            style: TextStyle(
-              color: textMain,
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildPendingCard() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -344,9 +419,9 @@ class AdminDashboardView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          const Text(
-            '5',
-            style: TextStyle(
+          Text(
+            _pendingCount.toString(),
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 28,
               fontWeight: FontWeight.w700,
@@ -471,32 +546,38 @@ class AdminDashboardView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          _buildActivityItem(
-            name: 'Sarah Johnson',
-            description: 'Checked in at 09:02 AM',
-            status: 'On Time',
-            statusColor: const Color(0xFF10B981),
-            statusBgColor: const Color(0xFFECFDF5),
-            avatarColor: const Color(0xFFD4A574),
-          ),
-          const SizedBox(height: 8),
-          _buildActivityItem(
-            name: 'Mike Thompson',
-            description: 'Requested Sick Leave',
-            status: 'Pending',
-            statusColor: const Color(0xFFD97706),
-            statusBgColor: const Color(0xFFFFFBEB),
-            avatarColor: const Color(0xFF8B7355),
-          ),
-          const SizedBox(height: 8),
-          _buildActivityItem(
-            name: 'Emily Rogers',
-            description: 'Checked in at 09:45 AM',
-            status: 'Late',
-            statusColor: const Color(0xFFDC6B6B),
-            statusBgColor: const Color(0xFFFDF2F2),
-            avatarColor: const Color(0xFFC49A6C),
-          ),
+          if (_recentActivities.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: borderColor),
+              ),
+              child: const Center(
+                child: Text(
+                  'No activity today',
+                  style: TextStyle(
+                    color: textMeta,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            )
+          else
+            ...List.generate(_recentActivities.length, (index) {
+              final activity = _recentActivities[index];
+              return Padding(
+                padding: EdgeInsets.only(bottom: index < _recentActivities.length - 1 ? 8 : 0),
+                child: _buildActivityItem(
+                  name: activity.name,
+                  description: activity.description,
+                  status: activity.status,
+                  statusColor: activity.statusColor,
+                  statusBgColor: activity.statusBgColor,
+                ),
+              );
+            }),
         ],
       ),
     );
@@ -508,7 +589,6 @@ class AdminDashboardView extends StatelessWidget {
     required String status,
     required Color statusColor,
     required Color statusBgColor,
-    required Color avatarColor,
   }) {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -522,9 +602,19 @@ class AdminDashboardView extends StatelessWidget {
           Container(
             width: 36,
             height: 36,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              color: avatarColor,
+              color: Color(0xFFD4A574),
+            ),
+            child: Center(
+              child: Text(
+                name.isNotEmpty ? name[0].toUpperCase() : '?',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -570,77 +660,21 @@ class AdminDashboardView extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildBottomNavBar() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: borderColor, width: 1),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 16,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildNavItem(Icons.dashboard, 'Home', isActive: true),
-          _buildNavItem(Icons.group_outlined, 'Staff'),
-          Transform.translate(
-            offset: const Offset(0, -16),
-            child: Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: primaryColor,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: primaryColor.withOpacity(0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.add,
-                color: Colors.white,
-                size: 26,
-              ),
-            ),
-          ),
-          _buildNavItem(Icons.calendar_month_outlined, 'Leaves'),
-          _buildNavItem(Icons.settings_outlined, 'Settings'),
-        ],
-      ),
-    );
-  }
+/// Helper class for recent activity items
+class _RecentActivity {
+  final String name;
+  final String description;
+  final String status;
+  final Color statusColor;
+  final Color statusBgColor;
 
-  Widget _buildNavItem(IconData icon, String label, {bool isActive = false}) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          color: isActive ? primaryColor : textMeta,
-          size: 24,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: isActive ? primaryColor : textMeta,
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
+  _RecentActivity({
+    required this.name,
+    required this.description,
+    required this.status,
+    required this.statusColor,
+    required this.statusBgColor,
+  });
 }

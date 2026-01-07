@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/storage/auth_service.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 
 class AdminProfileView extends StatelessWidget {
   const AdminProfileView({super.key});
@@ -140,7 +141,8 @@ class AdminProfileView extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: GestureDetector(
         onTap: () async {
-          await AuthService.logout();
+          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+          await authProvider.logout();
           if (context.mounted) {
             Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
           }

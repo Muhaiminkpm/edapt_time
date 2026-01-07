@@ -1,55 +1,157 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import '../../providers/auth_provider.dart';
+import '../../core/db/attendance_db_helper.dart';
+import '../../models/attendance_model.dart';
 
-class EmployeeAttendanceView extends StatelessWidget {
+class EmployeeAttendanceView extends StatefulWidget {
   const EmployeeAttendanceView({super.key});
 
+  @override
+  State<EmployeeAttendanceView> createState() => _EmployeeAttendanceViewState();
+}
+
+class _EmployeeAttendanceViewState extends State<EmployeeAttendanceView> {
   static const Color primaryColor = Color(0xFF1A56DB);
-  static const Color primaryLight = Color(0xFF3B82F6);
   static const Color backgroundLight = Color(0xFFF8FAFC);
   static const Color surfaceLight = Color(0xFFFFFFFF);
   static const Color borderLight = Color(0xFFE2E8F0);
   static const Color textMain = Color(0xFF1E293B);
   static const Color textSecondary = Color(0xFF64748B);
   static const Color textMuted = Color(0xFF94A3B8);
-  static const Color statusPresent = Color(0xFF2563EB);
+  static const Color statusPresent = Color(0xFF22C55E);
   static const Color statusAbsent = Color(0xFFDC2626);
-  static const Color statusLeave = Color(0xFFD97706);
-  static const Color statusHalf = Color(0xFF7C3AED);
+
+  DateTime _currentMonth = DateTime.now();
+  DateTime _selectedDate = DateTime.now();
+  String? _employeeId;
+  
+  // Map of date -> attendance record
+  Map<String, AttendanceModel> _attendanceRecords = {};
+  AttendanceModel? _selectedAttendance;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reload data when dependencies change (e.g., tab becomes visible)
+    if (_employeeId != null && !_isLoading) {
+      _loadAttendanceRecords().then((_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    
+    // Get employee ID
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final currentUser = authProvider.currentUser;
+    
+    if (currentUser != null) {
+      _employeeId = currentUser.uid;
+      debugPrint('Employee ID from AuthProvider: $_employeeId');
+    } else {
+      _employeeId = await AuthProvider.getLoggedInUserId();
+      debugPrint('Employee ID from saved session: $_employeeId');
+    }
+    
+    if (_employeeId != null) {
+      await _loadAttendanceRecords();
+    } else {
+      debugPrint('ERROR: No employee ID found!');
+    }
+    
+    setState(() => _isLoading = false);
+  }
+
+  Future<void> _loadAttendanceRecords() async {
+    if (_employeeId == null) return;
+    
+    try {
+      debugPrint('Loading attendance for employee: $_employeeId');
+      final records = await AttendanceDbHelper.getEmployeeAttendance(_employeeId!);
+      debugPrint('Found ${records.length} attendance records');
+      
+      _attendanceRecords = {
+        for (var r in records) r.date: r,
+      };
+      
+      // Debug: Print all records
+      for (var r in records) {
+        debugPrint('Record: date=${r.date}, punchIn=${r.punchInTime}, punchOut=${r.punchOutTime}');
+      }
+      
+      // Load selected date attendance
+      final selectedDateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
+      _selectedAttendance = _attendanceRecords[selectedDateStr];
+      debugPrint('Selected date: $selectedDateStr, has record: ${_selectedAttendance != null}');
+    } catch (e) {
+      debugPrint('Error loading attendance: $e');
+    }
+  }
+
+  void _previousMonth() {
+    setState(() {
+      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1, 1);
+    });
+  }
+
+  void _nextMonth() {
+    final now = DateTime.now();
+    final nextMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1);
+    if (nextMonth.isBefore(DateTime(now.year, now.month + 1, 1))) {
+      setState(() {
+        _currentMonth = nextMonth;
+      });
+    }
+  }
+
+  void _selectDate(DateTime date) {
+    final dateStr = DateFormat('yyyy-MM-dd').format(date);
+    setState(() {
+      _selectedDate = date;
+      _selectedAttendance = _attendanceRecords[dateStr];
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundLight,
       body: SafeArea(
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                _buildAppBar(),
-                _buildStatsRow(),
-                Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.only(bottom: 100),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildCalendar(),
-                        _buildLegendChips(),
-                        _buildDateDetails(),
-                      ],
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                children: [
+                  _buildAppBar(),
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: _loadData,
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.only(bottom: 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildCalendar(),
+                            _buildLegendChips(),
+                            _buildDateDetails(),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            Positioned(
-              bottom: 20,
-              right: 20,
-              child: _buildFAB(),
-            ),
-          ],
-        ),
+                ],
+              ),
       ),
     );
   }
@@ -67,22 +169,15 @@ class EmployeeAttendanceView extends StatelessWidget {
               shape: BoxShape.circle,
               color: const Color(0xFFE8C9A0),
               border: Border.all(color: Colors.white, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ],
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
-                  'Attendance',
+                  'Attendance History',
                   style: TextStyle(
                     color: textMain,
                     fontSize: 18,
@@ -92,7 +187,7 @@ class EmployeeAttendanceView extends StatelessWidget {
                 ),
                 SizedBox(height: 1),
                 Text(
-                  'Employee View',
+                  'View your attendance records',
                   style: TextStyle(
                     color: textSecondary,
                     fontSize: 12,
@@ -102,102 +197,14 @@ class EmployeeAttendanceView extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: surfaceLight,
-              border: Border.all(color: borderLight, width: 1),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: Icon(
-              Icons.notifications_outlined,
-              color: textSecondary,
-              size: 20,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatsRow() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-      child: Row(
-        children: [
-          Expanded(child: _buildStatCard('Present', '18', statusPresent)),
-          const SizedBox(width: 10),
-          Expanded(child: _buildStatCard('Leaves', '1', statusLeave)),
-          const SizedBox(width: 10),
-          Expanded(child: _buildStatCard('Absent', '0', statusAbsent)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(String label, String count, Color dotColor) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: surfaceLight,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: borderLight, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 7,
-                height: 7,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: dotColor,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: textSecondary,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            count,
-            style: const TextStyle(
-              color: textMain,
-              fontSize: 22,
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.5,
-            ),
-          ),
         ],
       ),
     );
   }
 
   Widget _buildCalendar() {
+    final monthName = DateFormat('MMMM yyyy').format(_currentMonth);
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
@@ -205,62 +212,63 @@ class EmployeeAttendanceView extends StatelessWidget {
           color: surfaceLight,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: borderLight, width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
         ),
         child: Column(
           children: [
+            // Month navigation
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: backgroundLight,
-                    ),
-                    child: Icon(
-                      Icons.chevron_left_rounded,
-                      color: textSecondary,
-                      size: 20,
+                  GestureDetector(
+                    onTap: _previousMonth,
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: backgroundLight,
+                      ),
+                      child: const Icon(
+                        Icons.chevron_left_rounded,
+                        color: textSecondary,
+                        size: 20,
+                      ),
                     ),
                   ),
-                  const Text(
-                    'September 2023',
-                    style: TextStyle(
+                  Text(
+                    monthName,
+                    style: const TextStyle(
                       color: textMain,
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       letterSpacing: -0.2,
                     ),
                   ),
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: backgroundLight,
-                    ),
-                    child: Icon(
-                      Icons.chevron_right_rounded,
-                      color: textSecondary,
-                      size: 20,
+                  GestureDetector(
+                    onTap: _nextMonth,
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: backgroundLight,
+                      ),
+                      child: const Icon(
+                        Icons.chevron_right_rounded,
+                        color: textSecondary,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
+            // Week day headers
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 border: Border(
                   bottom: BorderSide(color: borderLight),
                 ),
@@ -273,7 +281,7 @@ class EmployeeAttendanceView extends StatelessWidget {
                       alignment: Alignment.center,
                       child: Text(
                         day,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: textMuted,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -285,6 +293,7 @@ class EmployeeAttendanceView extends StatelessWidget {
                 }).toList(),
               ),
             ),
+            // Calendar grid
             Padding(
               padding: const EdgeInsets.all(14),
               child: _buildCalendarGrid(),
@@ -296,87 +305,134 @@ class EmployeeAttendanceView extends StatelessWidget {
   }
 
   Widget _buildCalendarGrid() {
-    final List<Map<String, dynamic>> calendarData = [
-      {'day': '', 'status': null},
-      {'day': '', 'status': null},
-      {'day': '', 'status': null},
-      {'day': '1', 'status': statusPresent},
-      {'day': '2', 'status': const Color(0xFFCBD5E1)},
-      {'day': '3', 'status': const Color(0xFFCBD5E1)},
-      {'day': '4', 'status': statusPresent},
-      {'day': '5', 'status': statusPresent},
-      {'day': '6', 'status': statusHalf},
-      {'day': '7', 'status': statusPresent},
-      {'day': '8', 'status': statusPresent},
-      {'day': '9', 'status': const Color(0xFFCBD5E1)},
-      {'day': '10', 'status': const Color(0xFFCBD5E1)},
-      {'day': '11', 'status': statusAbsent},
-      {'day': '12', 'status': statusPresent},
-      {'day': '13', 'status': statusPresent},
-      {'day': '14', 'status': 'selected'},
-      {'day': '15', 'status': statusLeave},
-      {'day': '16', 'status': const Color(0xFFCBD5E1)},
-      {'day': '17', 'status': const Color(0xFFCBD5E1)},
-      {'day': '18', 'status': statusPresent},
-      {'day': '19', 'status': 'future'},
-      {'day': '20', 'status': 'future'},
-      {'day': '21', 'status': 'future'},
-      {'day': '22', 'status': 'future'},
-      {'day': '23', 'status': 'future'},
-      {'day': '24', 'status': 'future'},
-      {'day': '25', 'status': 'future'},
-      {'day': '26', 'status': 'future'},
-      {'day': '27', 'status': 'future'},
-      {'day': '28', 'status': 'future'},
-      {'day': '29', 'status': 'future'},
-      {'day': '30', 'status': 'future'},
-    ];
-
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 7,
-        mainAxisSpacing: 6,
-        crossAxisSpacing: 0,
-        childAspectRatio: 1,
-      ),
-      itemCount: calendarData.length,
-      itemBuilder: (context, index) {
-        final data = calendarData[index];
-        final day = data['day'] as String;
-        final status = data['status'];
-
-        if (day.isEmpty) {
-          return const SizedBox();
-        }
-
-        if (status == 'selected') {
-          return _buildSelectedDay(day);
-        }
-
-        if (status == 'future') {
-          return _buildFutureDay(day);
-        }
-
-        return _buildCalendarDay(day, status as Color?);
-      },
+    final now = DateTime.now();
+    final firstDayOfMonth = DateTime(_currentMonth.year, _currentMonth.month, 1);
+    final lastDayOfMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 0);
+    final startingWeekday = firstDayOfMonth.weekday % 7; // Sunday = 0
+    final daysInMonth = lastDayOfMonth.day;
+    
+    final totalCells = startingWeekday + daysInMonth;
+    final rows = (totalCells / 7).ceil();
+    
+    return Column(
+      children: List.generate(rows, (row) {
+        return Row(
+          children: List.generate(7, (col) {
+            final cellIndex = row * 7 + col;
+            final dayNumber = cellIndex - startingWeekday + 1;
+            
+            if (dayNumber < 1 || dayNumber > daysInMonth) {
+              return const Expanded(child: SizedBox(height: 40));
+            }
+            
+            final date = DateTime(_currentMonth.year, _currentMonth.month, dayNumber);
+            final dateStr = DateFormat('yyyy-MM-dd').format(date);
+            final attendance = _attendanceRecords[dateStr];
+            final isSelected = _selectedDate.year == date.year &&
+                _selectedDate.month == date.month &&
+                _selectedDate.day == date.day;
+            final isFuture = date.isAfter(now);
+            final isToday = date.year == now.year && 
+                date.month == now.month && 
+                date.day == now.day;
+            
+            return Expanded(
+              child: GestureDetector(
+                onTap: isFuture ? null : () => _selectDate(date),
+                child: Container(
+                  height: 40,
+                  alignment: Alignment.center,
+                  child: _buildDayCell(
+                    dayNumber.toString(),
+                    attendance: attendance,
+                    isSelected: isSelected,
+                    isFuture: isFuture,
+                    isToday: isToday,
+                  ),
+                ),
+              ),
+            );
+          }),
+        );
+      }),
     );
   }
 
-  Widget _buildCalendarDay(String day, Color? dotColor) {
+  Widget _buildDayCell(
+    String day, {
+    AttendanceModel? attendance,
+    bool isSelected = false,
+    bool isFuture = false,
+    bool isToday = false,
+  }) {
+    Color? dotColor;
+    if (attendance != null && attendance.hasPunchedIn) {
+      dotColor = statusPresent;
+    }
+    
+    if (isSelected) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: primaryColor,
+            ),
+            child: Center(
+              child: Text(
+                day,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    
+    if (isFuture) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            day,
+            style: const TextStyle(
+              color: textMuted,
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+        ],
+      );
+    }
+    
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(
-          day,
-          style: const TextStyle(
-            color: textMain,
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
+        Container(
+          padding: const EdgeInsets.all(2),
+          decoration: isToday
+              ? BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: primaryColor, width: 1.5),
+                )
+              : null,
+          child: Text(
+            day,
+            style: const TextStyle(
+              color: textMain,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
-        const SizedBox(height: 3),
+        const SizedBox(height: 2),
         if (dotColor != null)
           Container(
             width: 5,
@@ -390,55 +446,6 @@ class EmployeeAttendanceView extends StatelessWidget {
     );
   }
 
-  Widget _buildSelectedDay(String day) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: primaryColor,
-            boxShadow: [
-              BoxShadow(
-                color: primaryColor.withOpacity(0.2),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Text(
-              day,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFutureDay(String day) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          day,
-          style: TextStyle(
-            color: textMuted,
-            fontSize: 13,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildLegendChips() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
@@ -448,8 +455,6 @@ class EmployeeAttendanceView extends StatelessWidget {
         children: [
           _buildLegendChip('Present', statusPresent),
           _buildLegendChip('Absent', statusAbsent),
-          _buildLegendChip('Leave', statusLeave),
-          _buildLegendChip('Half-day', statusHalf),
         ],
       ),
     );
@@ -477,7 +482,7 @@ class EmployeeAttendanceView extends StatelessWidget {
           const SizedBox(width: 5),
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               color: textSecondary,
               fontSize: 11,
               fontWeight: FontWeight.w500,
@@ -489,6 +494,12 @@ class EmployeeAttendanceView extends StatelessWidget {
   }
 
   Widget _buildDateDetails() {
+    final dateStr = DateFormat('MMMM d, yyyy').format(_selectedDate);
+    final isPresent = _selectedAttendance?.hasPunchedIn ?? false;
+    final checkInTime = _formatTime(_selectedAttendance?.punchInTime);
+    final checkOutTime = _formatTime(_selectedAttendance?.punchOutTime);
+    final totalHours = _calculateTotalHours();
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -497,8 +508,8 @@ class EmployeeAttendanceView extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(left: 2, bottom: 10),
             child: Text(
-              'September 14 Details',
-              style: TextStyle(
+              dateStr,
+              style: const TextStyle(
                 color: textMain,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -511,19 +522,13 @@ class EmployeeAttendanceView extends StatelessWidget {
               color: surfaceLight,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: borderLight, width: 1),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ],
             ),
             child: Column(
               children: [
+                // Status row
                 Container(
                   padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     border: Border(
                       bottom: BorderSide(color: borderLight),
                     ),
@@ -535,53 +540,25 @@ class EmployeeAttendanceView extends StatelessWidget {
                         height: 36,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: primaryColor.withOpacity(0.08),
+                          color: isPresent
+                              ? statusPresent.withOpacity(0.1)
+                              : statusAbsent.withOpacity(0.1),
                         ),
                         child: Icon(
-                          Icons.check_circle_outline_rounded,
-                          color: primaryColor,
+                          isPresent
+                              ? Icons.check_circle_outline_rounded
+                              : Icons.cancel_outlined,
+                          color: isPresent ? statusPresent : statusAbsent,
                           size: 18,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Present',
-                              style: TextStyle(
-                                color: textMain,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 1),
-                            Text(
-                              'Regular Shift',
-                              style: TextStyle(
-                                color: textSecondary,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFDCFCE7).withOpacity(0.7),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
                         child: Text(
-                          'On Time',
-                          style: TextStyle(
-                            color: const Color(0xFF166534),
-                            fontSize: 11,
+                          isPresent ? 'Present' : 'No Record',
+                          style: const TextStyle(
+                            color: textMain,
+                            fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -589,12 +566,13 @@ class EmployeeAttendanceView extends StatelessWidget {
                     ],
                   ),
                 ),
+                // Check In / Check Out row
                 Row(
                   children: [
                     Expanded(
                       child: Container(
                         padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           border: Border(
                             right: BorderSide(color: borderLight),
                           ),
@@ -602,7 +580,7 @@ class EmployeeAttendanceView extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            const Text(
                               'Check In',
                               style: TextStyle(
                                 color: textSecondary,
@@ -612,8 +590,8 @@ class EmployeeAttendanceView extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '09:02 AM',
-                              style: TextStyle(
+                              checkInTime,
+                              style: const TextStyle(
                                 color: textMain,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -630,7 +608,7 @@ class EmployeeAttendanceView extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            const Text(
                               'Check Out',
                               style: TextStyle(
                                 color: textSecondary,
@@ -640,8 +618,8 @@ class EmployeeAttendanceView extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '06:05 PM',
-                              style: TextStyle(
+                              checkOutTime,
+                              style: const TextStyle(
                                 color: textMain,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -654,11 +632,12 @@ class EmployeeAttendanceView extends StatelessWidget {
                     ),
                   ],
                 ),
+                // Total hours row
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: backgroundLight,
-                    borderRadius: const BorderRadius.only(
+                    borderRadius: BorderRadius.only(
                       bottomLeft: Radius.circular(11),
                       bottomRight: Radius.circular(11),
                     ),
@@ -666,14 +645,14 @@ class EmployeeAttendanceView extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
+                      const Row(
                         children: [
                           Icon(
                             Icons.schedule_rounded,
                             color: textMuted,
                             size: 16,
                           ),
-                          const SizedBox(width: 6),
+                          SizedBox(width: 6),
                           Text(
                             'Total Hours',
                             style: TextStyle(
@@ -685,8 +664,8 @@ class EmployeeAttendanceView extends StatelessWidget {
                         ],
                       ),
                       Text(
-                        '9h 03m',
-                        style: TextStyle(
+                        totalHours,
+                        style: const TextStyle(
                           color: textMain,
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -704,45 +683,36 @@ class EmployeeAttendanceView extends StatelessWidget {
     );
   }
 
-  Widget _buildFAB() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: primaryColor.withOpacity(0.2),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        decoration: BoxDecoration(
-          color: primaryColor,
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.add_rounded,
-              color: Colors.white,
-              size: 18,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              'Request Leave',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.1,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  String _formatTime(String? time) {
+    if (time == null || time.isEmpty) {
+      return '--:--';
+    }
+    try {
+      final parsed = DateFormat('HH:mm:ss').parse(time);
+      return DateFormat('hh:mm a').format(parsed);
+    } catch (e) {
+      return time;
+    }
+  }
+
+  String _calculateTotalHours() {
+    if (_selectedAttendance?.punchInTime == null) {
+      return '--:--';
+    }
+    if (_selectedAttendance?.punchOutTime == null) {
+      return '--:--';
+    }
+    
+    try {
+      final inTime = DateFormat('HH:mm:ss').parse(_selectedAttendance!.punchInTime!);
+      final outTime = DateFormat('HH:mm:ss').parse(_selectedAttendance!.punchOutTime!);
+      final duration = outTime.difference(inTime);
+      
+      final hours = duration.inHours;
+      final minutes = duration.inMinutes % 60;
+      return '${hours}h ${minutes}m';
+    } catch (e) {
+      return '--:--';
+    }
   }
 }
